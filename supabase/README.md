@@ -1,0 +1,1 @@
+Read the root README for step-by-step provisioning. The database schema is intentionally not executed automatically against your other existing Supabase projects. Set RLS and confirm authorized account before releasing `/admin`.
