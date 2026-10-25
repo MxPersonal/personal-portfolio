@@ -12,12 +12,12 @@ const dict={
  fa:{about:'درباره من',services:'خدمات',projects:'پروژه‌ها',contact:'ارتباط',cta:'ارتباط با من',heading:'پروژه‌ها',top:'بازگشت به بالا',talk:'صحبت کنیم',footer:'ایده‌ای برای همکاری داری؟',
  hero:'از یک ایده تا یک دنیای دیجیتال هوشمند؛ جایی که کدنویسی، خلاقیت و هوش مصنوعی به هم می‌رسند.',
  bio:'من Mr.HoSSein هستم؛ علاقه‌مند به توسعه فول‌استک، مهندسی هوش مصنوعی و ساخت سیستم‌های هوشمند. تمرکز من بر ترکیب برنامه‌نویسی، خلاقیت و اتوماسیون برای تبدیل ایده‌های پیچیده به محصولات دیجیتال کاربردی است.',
- intro:'پروژه‌های در حال توسعه و ایده‌های در مرحله طراحی، با برچسب وضعیت واقعی.',
- notice:'تصاویر صرفاً متعلق به نمای بصری قالب اولیه هستند و اسکرین‌شات این پروژه نیستند.',group:'پروژه‌های شخصی و ایده‌ها',repo:'مخزن GitHub',discuss:'گفت‌وگو'},
+ intro:'منتخبی از پروژه‌های واقعی من که همچنان در حال توسعه و بهبود هستند.',
+ notice:'تصاویر صرفاً متعلق به نمای بصری قالب اولیه هستند و اسکرین‌شات این پروژه نیستند.',group:'پروژه‌های منتخب',repo:'مخزن GitHub',discuss:'گفت‌وگو'},
  en:{about:'About',services:'Services',projects:'Projects',contact:'Contact',cta:'Contact Me',heading:'Project',top:'Back to top',talk:"Let's talk",footer:'GOT A PROJECT IN MIND?',
  hero:'Turning ambitious ideas into powerful digital products with code, AI, and automation.',
  bio:'I am Mr.HoSSein, passionate about full-stack development, AI engineering and intelligent systems. I combine programming, creativity and automation to turn complex ideas into practical digital products.',
- intro:'Work in progress and concepts, accurately labelled.',notice:'Original template visuals only, not screenshots of this project.',group:'Personal work and concepts',repo:'GitHub repo',discuss:'Discuss'}
+ intro:'Selected real projects currently in development, accurately labelled.',notice:'Original template visuals only, not screenshots of this project.',group:'Selected projects',repo:'GitHub repo',discuss:'Discuss'}
 } as const;
 const services={
  fa:[['توسعه وب و فول‌استک','وب‌سایت، لندینگ‌پیج، وب‌اپلیکیشن، پنل مدیریت، فروشگاه اینترنتی، CMS، بک‌اند و API.'],['مهندسی هوش مصنوعی','عامل‌های هوش مصنوعی، چت‌بات و دستیار اختصاصی، سامانه‌های RAG و اتصال به داده‌ها.'],['اتوماسیون و MCP','n8n، Make و Zapier، ساخت MCP Server و یکپارچه‌سازی سرویس‌ها و APIها.'],['زیرساخت و AI محلی','راه‌اندازی مدل‌های محلی، Deployment و DevOps، اتوماسیون تولید تصویر و ویدیو.'],['اپلیکیشن موبایل و دسکتاپ','توسعه برنامه‌های موبایل و دسکتاپ با روش ترکیبی کدنویسی دستی و AI Agents.']],
@@ -25,8 +25,8 @@ const services={
 } as const;
 const projects=[
  {id:'site',names:{fa:'پورتفولیوی Mr.HoSSein',en:'Mr.HoSSein Portfolio'},states:{fa:'در حال توسعه',en:'Work in Progress'},images:['7ef87a3970ec9470','4dcf01880019fcd4','8608958534535609'],url:'https://github.com/MxPersonal/personal-portfolio'},
- {id:'jarvis',names:{fa:'جارویس ایرانی',en:'JARVIS IR'},states:{fa:'طرح و برنامه‌ریزی',en:'Concept / Planning'},images:['84ca38f67bab52b8','c660aee10deeb5d5','6dba09776c805635'],url:''},
- {id:'cms',names:{fa:'سیستم مدیریت محتوا',en:'Custom CMS'},states:{fa:'طرح و برنامه‌ریزی',en:'Concept / Planning'},images:['f401f0f92ed5fc95','195db01d0544b561','e47cabe03c916aab'],url:''}
+ {id:'safir',names:{fa:'چاپ سفیر هنر',en:'Safire Honar Print Center'},states:{fa:'پروژه در حال توسعه',en:'Work in Progress'},images:['84ca38f67bab52b8','c660aee10deeb5d5','6dba09776c805635'],url:'https://github.com/MxPersonal/safirehonarprintcenter'},
+ {id:'noghlijan',names:{fa:'فروشگاه نقلی‌جان',en:'Noghlijan E-Commerce'},states:{fa:'پروژه در حال توسعه',en:'Work in Progress'},images:['f401f0f92ed5fc95','195db01d0544b561','e47cabe03c916aab'],url:'https://github.com/MxPersonal/noghlijan-x-mrhossein'}
 ] as const;
 const socials=[
  ['GitHub','https://github.com/HosseinYazdanpanah'],['LinkedIn','https://www.linkedin.com/in/hossein-yazdanpanah-0206b93ab/'],['Telegram','https://t.me/Hosssein_0905'],['Instagram','https://www.instagram.com/hossein._.yzdnpnh/'],['YouTube','https://www.youtube.com/@HoSSeinYazdanpnh'],['Discord','https://discord.com/users/1241497971888230496'],['Eitaa','https://eitaa.com/HoSSeinyazdnpnh'],['Rubika','https://rubika.ir/hossein_yazdanpnh']
