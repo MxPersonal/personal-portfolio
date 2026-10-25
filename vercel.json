@@ -1,1 +1,28 @@
-{"rewrites":[{"source":"/project/:slug","destination":"/index.html"},{"source":"/admin","destination":"/index.html"}]}
+{
+  "rewrites": [
+    {
+      "source": "/fa",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/en",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/fa/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/en/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/project/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    }
+  ]
+}
