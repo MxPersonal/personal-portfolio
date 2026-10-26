@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {motion,useReducedMotion,useScroll,useTransform,type MotionValue} from 'framer-motion';
-import {ArrowUpRight,ArrowDown,Asterisk,LockKeyhole,Plus,Trash2,Save,LogOut,LoaderCircle,Image as ImageIcon,Settings2,X,ChevronLeft,Send,Copy} from 'lucide-react';
+import {ArrowUpRight,ArrowDown,Asterisk,LockKeyhole,Plus,Trash2,Save,LogOut,LoaderCircle,Image as ImageIcon,Settings2,X,Menu,ChevronLeft,Send,Copy} from 'lucide-react';
 import {serviceGroups,labels,type Localized} from './content';
 import CMSStudio from './CMSStudio';
 import {defaultCMS,getCMS,entryOf,entriesOf,safeUrl,type CmsEntry,type CmsSnapshot} from './cms';
@@ -56,11 +56,29 @@ function HeroSection({lang,setLang,available,entries}:{lang:Lang,setLang:(l:Lang
  const h=entryOf(entries,'copy','hero'),menu=entryOf(entries,'copy','navigation');
  const nav=menu?.meta[lang];const names=Array.isArray(nav)?nav:([dict[lang].about,dict[lang].services,dict[lang].projects,dict[lang].contact] as string[]);
  const img=safeUrl(h?.image_url||'/hero-character.webp',true);
+ const [menuOpen,setMenuOpen]=useState(false);
+ useEffect(()=>{
+  if(!menuOpen)return;
+  const onEscape=(event:KeyboardEvent)=>{if(event.key==='Escape')setMenuOpen(false)};
+  window.addEventListener('keydown',onEscape);
+  return()=>window.removeEventListener('keydown',onEscape);
+ },[menuOpen]);
+ const navIds=['about','services','projects','contact'] as const;
  return <section className="hero" id="home">
- <FadeIn y={-20} className="nav-outer"><nav className="navbar" aria-label="Main navigation">
- {(['about','services','projects','contact'] as const).map((id,i)=><a key={id} href={'#'+id}>{typeof names[i]==='string'?names[i]:dict[lang][id]}</a>)}
- <button type="button" className="lang-toggle" onClick={()=>setLang(lang==='fa'?'en':'fa')} aria-label="Switch language">{lang==='fa'?'EN':'FA'}</button>
- </nav></FadeIn>
+ <FadeIn y={-20} className="nav-outer">
+  <nav className="navbar" aria-label={lang==='fa'?'ناوبری اصلی':'Main navigation'}>
+   <div className="desktop-nav-links">
+    {navIds.map((id,i)=><a key={id} href={'#'+id}>{typeof names[i]==='string'?names[i]:dict[lang][id]}</a>)}
+   </div>
+   <button type="button" className="mobile-menu-toggle" aria-controls="mobile-primary-navigation" aria-expanded={menuOpen} aria-label={lang==='fa'?(menuOpen?'بستن منو':'باز کردن منو'):(menuOpen?'Close menu':'Open menu')} onClick={()=>setMenuOpen(open=>!open)}>
+    {menuOpen?<X size={25} aria-hidden="true"/>:<Menu size={25} aria-hidden="true"/>}
+   </button>
+   <button type="button" className="lang-toggle" onClick={()=>{setMenuOpen(false);setLang(lang==='fa'?'en':'fa')}} aria-label={lang==='fa'?'تغییر زبان به انگلیسی':'Switch language to Persian'}>{lang==='fa'?'EN':'FA'}</button>
+  </nav>
+  <nav id="mobile-primary-navigation" className="mobile-menu-panel" aria-label={lang==='fa'?'منوی موبایل':'Mobile navigation'} hidden={!menuOpen} dir={lang==='fa'?'rtl':'ltr'}>
+   {navIds.map((id,i)=><a key={id} href={'#'+id} onClick={()=>setMenuOpen(false)}>{typeof names[i]==='string'?names[i]:dict[lang][id]}</a>)}
+  </nav>
+ </FadeIn>
  <FadeIn delay={.15} y={40} className="hero-title-wrap"><h1 className="hero-heading hero-title" dir="ltr">{h?.title.en??'Mr.HoSSein'}</h1></FadeIn>
  <FadeIn delay={.6} y={30} className="portrait-wrap"><Magnet>{img&&<img src={img} alt="Mr.HoSSein portrait" fetchPriority="high"/>}</Magnet></FadeIn>
  <div className="hero-bottom"><FadeIn delay={.35} y={20} className="hero-intro"><small className="availability-badge">{available[lang]}</small>
