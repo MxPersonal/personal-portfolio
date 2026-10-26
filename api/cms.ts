@@ -33,6 +33,12 @@ const parseFilters=(raw:unknown,spec:Spec)=>{
   return {field:x.field,value:x.value};
  });
 };
+const jsonbKeys:Record<string,Set<string>>={
+ portfolio_projects:new Set(['title','summary','body','role']),
+ portfolio_cms_entries:new Set(['title','description','body','meta']),
+ portfolio_settings:new Set(['value'])
+};
+const encodeSqlValue=(table:string,key:string,value:unknown)=>jsonbKeys[table]?.has(key)?JSON.stringify(value):value;
 const boolKeys=new Set(['featured','published']);
 const localizedKeys=new Set(['title','summary','body','role','description']);
 function validate(table:string,body:unknown){
@@ -112,7 +118,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
   if(req.method==='POST'){
    if(table==='portfolio_admins'||table==='portfolio_inquiries')return fail(res,403,'Protected table');
    if(!rows.every(r=>spec.key.every(k=>k in r))&&req.body?.upsert)throw Error('Invalid upsert key');
-   const values=rows.flatMap(row=>keys.map(k=>row[k]));
+   const values=rows.flatMap(row=>keys.map(k=>encodeSqlValue(table,k,row[k])));
    const tuples=rows.map((_,r)=>'('+keys.map((_,c)=>'$'+(r*keys.length+c+1)).join(',')+')').join(',');
    const conflict=spec.key.map(quote).join(',');
    const updatable=keys.filter(k=>!spec.key.includes(k));
@@ -125,7 +131,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
   if(filters.length!==1||!(table==='portfolio_settings'?filters[0].field==='key':filters[0].field==='id'))return fail(res,400,'Only primary-key writes are allowed');
   if(table==='portfolio_admins'||table==='portfolio_inquiries'&&keys.some(k=>k!=='status'))return fail(res,403,'Protected fields');
   const data=rows[0];
-  const values=keys.map(k=>data[k]);
+  const values=keys.map(k=>encodeSqlValue(table,k,data[k]));
   const setter=keys.map((k,i)=>quote(k)+'=$'+(i+1)).join(',');
   const r=await query('UPDATE public.'+quote(table)+' SET '+setter+' WHERE '+quote(filters[0].field)+'=$'+(keys.length+1)+' RETURNING *',[...values,filters[0].value]);
   return res.status(200).json({data:r.rows});
