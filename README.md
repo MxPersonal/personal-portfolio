@@ -63,19 +63,24 @@ npm run build
 ## Architecture
 
 - `src/content.ts`: public owner-approved content and 15 services in FA/EN.
-- `src/db.ts`: minimal, read-only public Supabase client data layer.
+- `src/db.ts`: Neon Auth session and Vercel CMS API data adapter.
 - `src/main.tsx`: localized UI, project pages, admin forms and GSAP/R3F scenes.
 - `src/styles.css`: responsive design system, accessibility and animation styles.
 - `api/inquiry.ts`: Vercel secure server endpoint for contact requests.
-- `supabase/001_portfolio.sql`: schema, RLS, storage policies and admin roles.
+- `docs/NEON_CMS.md`: current Neon database, authentication and security setup guide.
 
 ## Owner decisions
 
 The original Jack artwork, sample project claims, broken `/work/*.gif` links and misleading experience metrics were removed. All currently visible bio copy is based on confirmed personal statements. The next planned decisions (#62-84) default to the robust adaptive hybrid approach, with an admin-first, privacy-aware implementation. Follow-up production enhancements (pricing workflows, richer media library and notifications) are tracked as implementation work, not silently claimed complete.
 
 
-## CMS اختصاصی / Portfolio CMS
 
-- مسیر ورود: [مدیریت محتوای سایت](https://personal-portfolio-six-amber-21.vercel.app/admin)
-- راهنمای نصب دیتابیس، احراز هویت و مدیریت کامل محتوای سایت: **[docs/CMS.md](docs/CMS.md)**
-- نسخه عمومی بدون اتصال دیتابیس با محتوای پیش‌فرض کار می‌کند. مدیریت و انتشار آنلاین نیاز به Supabase فعال و ENV معتبر دارد.
+## CMS اختصاصی / Neon integration
+
+- مخزن فعلی GitHub: `MxPersonal/personal-portfolio-x-mrhossein`
+- ورود مدیر: [Mr.HoSSein CMS](https://personal-portfolio-x-mrhossein.vercel.app/admin)
+- راهنمای فعلی راه‌اندازی Neon و معرفی حساب مدیر: **[docs/NEON_CMS.md](docs/NEON_CMS.md)**
+- Neon Auth برای ورود Email + Password و OTP تأیید ایمیل استفاده می‌شود. دسترسی مدیر جداگانه در جدول `portfolio_admins` بررسی می‌شود.
+- دیتابیس خصوصی با `DATABASE_URL` و `NEON_AUTH_BASE_URL` **فقط در Vercel Serverless API** قابل دسترسی است.
+- پنج جدول `portfolio_*` قبلاً در Neon ساخته شده‌اند و RLS آن‌ها فعال است. فایل‌های `supabase/*.sql` صرفاً برای آرشیو هستند؛ آن‌ها را روی Neon اجرا نکن.
+- برای آپلود فایل (تا 4MB)، Vercel Blob باید در پروژه فعال و متغیر `BLOB_READ_WRITE_TOKEN` موجود باشد. لینک‌های HTTPS رسانه بدون Blob هم قابل استفاده‌اند.

@@ -171,19 +171,95 @@ function InquiryPanel({lang,entries}:{lang:Lang,entries:CmsEntry[]}){
  {notice&&<p className="inquiry-wide" role="status">{notice}</p>}
  </form></details>
 }
-function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){const [email,setEmail]=useState(''),[sessionReady,setSessionReady]=useState(false),[authorized,setAuthorized]=useState(false),[status,setStatus]=useState(''),[items,setItems]=useState<Project[]>([]),[inquiries,setInquiries]=useState<Array<{id:string;reference:string;full_name:string;email:string;service:string;message:string;status:string;created_at:string}>>([]),[tab,setTab]=useState('site'),[edit,setEdit]=useState<null|Project>(null),[busy,setBusy]=useState(false),[availability,setAvailability]=useState<Localized>({fa:labels.fa.availability,en:labels.en.availability});const t=labels[lang];
- const refresh=async()=>{if(!supabase)return;const [p,q,settings]=await Promise.all([supabase.from('portfolio_projects').select('*').order('sort_order'),supabase.from('portfolio_inquiries').select('*').order('created_at',{ascending:false}).limit(100),supabase.from('portfolio_settings').select('value').eq('key','availability').maybeSingle()]);if(p.data)setItems(p.data as Project[]);if(q.data)setInquiries(q.data);if(settings.data?.value)setAvailability(settings.data.value as Localized)};
- useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(async({data})=>{setSessionReady(Boolean(data.session));if(data.session){const ok=await isAdmin();setAuthorized(ok);if(ok)refresh()}});const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,s)=>{setSessionReady(Boolean(s));if(s)setTimeout(()=>isAdmin().then(ok=>{setAuthorized(ok);if(ok)refresh()}),0);else setAuthorized(false)});return()=>subscription.unsubscribe()},[]);
+function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
+ const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[code,setCode]=useState('');
+ const [authMode,setAuthMode]=useState<'signIn'|'signUp'|'verify'>('signIn');
+ const [sessionReady,setSessionReady]=useState(false),[authorized,setAuthorized]=useState(false),[status,setStatus]=useState('');
+ const [items,setItems]=useState<Project[]>([]);
+ const [inquiries,setInquiries]=useState<Array<{id:string;reference:string;full_name:string;email:string;service:string;message:string;status:string;created_at:string}>>([]);
+ const [tab,setTab]=useState('site'),[edit,setEdit]=useState<null|Project>(null),[busy,setBusy]=useState(false);
+ const [availability,setAvailability]=useState<Localized>({fa:labels.fa.availability,en:labels.en.availability});
+ const t=labels[lang];
+ const refresh=async()=>{
+  if(!supabase)return;
+  const [p,q,settings]=await Promise.all([
+   supabase.from('portfolio_projects').select('*').order('sort_order'),
+   supabase.from('portfolio_inquiries').select('*').order('created_at',{ascending:false}).limit(100),
+   supabase.from('portfolio_settings').select('value').eq('key','availability').maybeSingle()
+  ]);
+  if(p.data)setItems(p.data as Project[]);
+  if(q.data)setInquiries(q.data);
+  if(settings.data?.value)setAvailability(settings.data.value as Localized);
+  if(p.error||q.error)setStatus(p.error?.message||q.error?.message||'');
+ };
+ useEffect(()=>{
+  if(!supabase)return;
+  let mounted=true;
+  supabase.auth.getSession().then(async ({data})=>{
+   if(!mounted)return;
+   setSessionReady(Boolean(data.session));
+   if(data.session){const ok=await isAdmin();if(!mounted)return;setAuthorized(ok);if(ok)void refresh()}
+  }).catch(()=>setSessionReady(false));
+  return ()=>{mounted=false};
+ },[]);
+ async function onAuth(e:React.FormEvent){
+  e.preventDefault();if(!supabase)return;setBusy(true);setStatus('');
+  try{
+   if(authMode==='verify'){
+    const r=await supabase.auth.verifyEmail({email,otp:code});
+    if(r.error)throw r.error;
+    setAuthMode('signIn');setStatus(lang==='fa'?'ایمیل تأیید شد. اکنون وارد شو.':'Email verified. Please sign in.');return;
+   }
+   if(password.length<8)throw Error(lang==='fa'?'رمز عبور باید حداقل ۸ کاراکتر باشد.':'Password must have at least 8 characters.');
+   if(authMode==='signUp'){
+    const r=await supabase.auth.signUpWithPassword({email,password});
+    if(r.error)throw r.error;
+    if(r.requiresVerification){setAuthMode('verify');setStatus(lang==='fa'?'کد تأیید به ایمیل ارسال شد.':'Check your inbox for the verification code.');return}
+    setStatus(lang==='fa'?'حساب ایجاد شد؛ اکنون وارد شو.':'Account created. Please sign in.');
+    setAuthMode('signIn');return;
+   }
+   const r=await supabase.auth.signInWithPassword({email,password});
+   if(r.error)throw r.error;
+   setSessionReady(true);
+   const ok=await isAdmin();setAuthorized(ok);
+   if(ok)await refresh();
+   else setStatus(lang==='fa'?'ورود موفق بود؛ حساب هنوز مجوز مدیریت ندارد.':'Signed in successfully, but this account is not yet approved as admin.');
+  }catch(err){setStatus(err instanceof Error?err.message:'Authentication failed')}
+  finally{setBusy(false)}
+ }
  const blank=():Project=>({id:'',slug:'',title:emptyLocalized(),summary:emptyLocalized(),body:emptyLocalized(),role:emptyLocalized(),status:'progress',category:'web',stack:[],cover_url:null,video_url:null,demo_url:null,repo_url:null,featured:false,published:false,sort_order:0});
  async function saveProject(){if(!supabase||!edit)return;setBusy(true);setStatus('');const {id,...fields}=edit;const result=id?await supabase.from('portfolio_projects').update(fields).eq('id',id):await supabase.from('portfolio_projects').insert(fields);if(result.error)setStatus(result.error.message);else{setEdit(null);setStatus(lang==='fa'?'پروژه ذخیره شد.':'Project saved.');await refresh();onRefresh()}setBusy(false)};
  async function deleteProject(id:string){if(!supabase||!confirm(lang==='fa'?'این پروژه حذف شود؟':'Delete this project?'))return;const r=await supabase.from('portfolio_projects').delete().eq('id',id);if(r.error)setStatus(r.error.message);else{refresh();onRefresh()}};
  async function uploadFile(file:File){if(!supabase||!edit)return;if(file.size>15*1024*1024){setStatus('File exceeds 15 MB');return}setBusy(true);const filename=`projects/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9_.-]/g,'-')}`;const {data,error}=await supabase.storage.from('portfolio-media').upload(filename,file,{upsert:false,contentType:file.type});if(error)setStatus(error.message);else if(data){const {data:url}=supabase.storage.from('portfolio-media').getPublicUrl(data.path);setEdit(v=>v?{...v,cover_url:url.publicUrl}:v)}setBusy(false)};
- async function signIn(e:React.FormEvent){e.preventDefault();if(!supabase)return;const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:window.location.origin+'/admin'}});setStatus(error?error.message:lang==='fa'?'لینک ورود به ایمیل ارسال شد.':'A sign-in link has been sent.')};
- if(!cmsConfigured)return <section className="admin-layout container"><span className="eyebrow">PORTFOLIO CMS</span><h1>{lang==='fa'?'پنل مدیریت هنوز به دیتابیس متصل نیست':'CMS connection required'}</h1><p>{lang==='fa'?'برای فعال‌سازی مدیریت واقعی و ذخیره‌سازی مشترک، پروژه Supabase اختصاصی را فعال و متغیرهای محیطی را در Vercel تنظیم کن. راهنمای دقیق داخل مخزن GitHub قرار دارد.':'Enable a dedicated Supabase project and set the Vercel environment variables. See the repository README for deployment instructions.'}</p><div className="admin-notice">VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY</div></section>;
- if(!sessionReady)return <section className="admin-layout container"><span className="eyebrow">ADMIN / AUTHENTICATION</span><h1>{lang==='fa'?'ورود مدیر':'Admin sign in'}</h1><form className="auth-form" onSubmit={signIn}><label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email"/></label><button className="btn btn-primary">{lang==='fa'?'ارسال لینک ورود':'Send magic link'}</button></form>{status&&<p className="status-text">{status}</p>}</section>;
- if(!authorized)return <section className="admin-layout container"><LockKeyhole size={38}/><h1>{lang==='fa'?'حساب تأیید نشده است':'Not an approved administrator'}</h1><p>{lang==='fa'?'برای دسترسی به پنل مدیریت باید شناسه کاربری تو به جدول portfolio_admins افزوده شود.':'Your account must be explicitly granted administrator access in portfolio_admins.'}</p><button className="btn btn-outline" onClick={()=>supabase?.auth.signOut()}>Sign out</button></section>;
+ if(!cmsConfigured)return <section className="admin-layout container"><span className="eyebrow">NEON CMS</span><h1>{lang==='fa'?'اتصال Neon Auth پیکربندی نشده':'Neon Auth is not configured'}</h1><p>VITE_NEON_AUTH_URL</p></section>;
+ if(!sessionReady)return <section className="admin-layout container">
+  <span className="eyebrow">NEON AUTH / PORTFOLIO CMS</span><h1>{authMode==='verify'?(lang==='fa'?'تأیید ایمیل':'Verify your email'):authMode==='signUp'?(lang==='fa'?'ساخت حساب':'Create account'):(lang==='fa'?'ورود مدیر':'Admin sign in')}</h1>
+  <form className="auth-form" onSubmit={onAuth}>
+   <label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email"/></label>
+   {authMode==='verify'?<label>{lang==='fa'?'کد تأیید ایمیل':'Email verification code'}<input required inputMode="numeric" type="text" value={code} onChange={e=>setCode(e.target.value)} autoComplete="one-time-code"/></label>:<label>{lang==='fa'?'رمز عبور':'Password'}<input required minLength={8} type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={authMode==='signUp'?'new-password':'current-password'}/></label>}
+   <button className="btn btn-primary" disabled={busy} type="submit">{authMode==='verify'?(lang==='fa'?'تأیید کد':'Verify code'):authMode==='signUp'?(lang==='fa'?'ثبت‌نام':'Create account'):(lang==='fa'?'ورود':'Sign in')}</button>
+  </form>
+  <p><button type="button" className="btn btn-outline" onClick={()=>{setStatus('');setAuthMode(authMode==='signUp'||authMode==='verify'?'signIn':'signUp')}}>{authMode==='signIn'?(lang==='fa'?'ساخت اولین حساب':'Create first account'):(lang==='fa'?'بازگشت به ورود':'Back to sign in')}</button></p>
+  {status&&<p className="status-text" role="status">{status}</p>}
+ </section>;
+ if(!authorized)return <section className="admin-layout container"><LockKeyhole size={38}/><h1>{lang==='fa'?'حساب هنوز مجوز مدیریت ندارد':'Admin approval required'}</h1>
+  <p>{lang==='fa'?'برای فعال‌شدن پنل، شناسه حساب تأییدشده را در جدول portfolio_admins ثبت کن.':'Add your verified user ID to portfolio_admins before accessing the CMS.'}</p>
+  <AdminIdentity lang={lang}/>
+  {status&&<p className="status-text">{status}</p>}
+  <button className="btn btn-outline" onClick={()=>supabase?.auth.signOut()}>Sign out</button>
+ </section>;
  return <section className="admin-layout container"><div className="admin-header"><div><span className="eyebrow">SECURE CMS / MR.HOSSEIN</span><h1>{lang==='fa'?'پنل مدیریت پورتفولیو':'Portfolio Dashboard'}</h1></div><button className="btn btn-outline" onClick={()=>supabase?.auth.signOut()}><LogOut size={16}/> Sign out</button></div><div className="filter-pills"><button onClick={()=>setTab('site')} className={tab==='site'?'active':''}>{lang==='fa'?'مدیریت محتوا':'Site CMS'}</button><button onClick={()=>setTab('projects')} className={tab==='projects'?'active':''}>Projects ({items.length})</button><button onClick={()=>setTab('inquiries')} className={tab==='inquiries'?'active':''}>Inquiries ({inquiries.length})</button><button onClick={()=>setTab('settings')} className={tab==='settings'?'active':''}>Settings</button></div>{status&&<p className="status-text">{status}</p>}{tab==='site'?<CMSStudio lang={lang} onRefresh={onRefresh}/>:tab==='projects'?<><div className="admin-section-header"><h2>Projects</h2><button className="btn btn-primary" onClick={()=>setEdit(blank())}><Plus size={16}/> New project</button></div><div className="admin-project-list">{items.map(p=><div className="admin-project-row" key={p.id}>{p.cover_url?<img src={p.cover_url} alt=""/>:<ImageIcon size={30}/>}<div><strong>{p.title[lang]||p.slug}</strong><small>{p.status} · {p.published?'Published':'Draft'} · {p.featured?'Featured':'Standard'}</small></div><button className="icon-btn" title="Edit project" onClick={()=>setEdit(p)}><Settings2 size={18}/></button><button className="icon-btn" title="Delete project" onClick={()=>deleteProject(p.id)}><Trash2 size={18}/></button></div>)}</div></>:tab==='inquiries'?<div className="admin-project-list">{inquiries.length===0?<p>No inquiries yet.</p>:inquiries.map(q=><div className="admin-inquiry" key={q.id}><strong>{q.reference} · {q.full_name}</strong><small>{q.email} · {q.service} · {new Date(q.created_at).toLocaleDateString()}</small><p>{q.message}</p><select value={q.status} onChange={async e=>{if(!supabase)return;await supabase.from('portfolio_inquiries').update({status:e.target.value}).eq('id',q.id);refresh()}}>{['new','reviewing','replied','closed'].map(s=><option key={s}>{s}</option>)}</select></div>)}</div>:<div className="admin-setting-panel"><h2>Collaboration status</h2><label>Persian<input value={availability.fa} onChange={e=>setAvailability(v=>({...v,fa:e.target.value}))}/></label><label>English<input value={availability.en} onChange={e=>setAvailability(v=>({...v,en:e.target.value}))}/></label><button className="btn btn-primary" onClick={async()=>{const r=await supabase?.from('portfolio_settings').upsert({key:'availability',value:availability});setStatus(r?.error?.message||'Saved. Refresh the public site to view changes.')}}>Save availability</button></div>}
- {edit&&<div className="overlay" onMouseDown={()=>setEdit(null)}><div className="sheet admin-edit" role="dialog" aria-modal="true" onMouseDown={e=>e.stopPropagation()}><div className="modal-top"><strong>{edit.id?'Edit project':'New project'}</strong><button className="icon-btn" onClick={()=>setEdit(null)} aria-label="Close"><X size={20}/></button></div><div className="admin-edit-fields"><label>Slug<input value={edit.slug} onChange={e=>setEdit(v=>v?{...v,slug:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')}:v)}/></label>{(['title','summary','body','role'] as const).map(field=><div className="admin-double" key={field}><label>{field} FA<textarea rows={field==='body'?4:2} value={edit[field].fa} onChange={e=>setEdit(v=>v?{...v,[field]:{...v[field],fa:e.target.value}}:v)}/></label><label>{field} EN<textarea rows={field==='body'?4:2} value={edit[field].en} onChange={e=>setEdit(v=>v?{...v,[field]:{...v[field],en:e.target.value}}:v)}/></label></div>)}<div className="admin-double"><label>Status<select value={edit.status} onChange={e=>setEdit(v=>v?{...v,status:e.target.value as ProjectStatus}:v)}>{Object.keys(statusLabels).map(s=><option key={s}>{s}</option>)}</select></label><label>Category<input value={edit.category} onChange={e=>setEdit(v=>v?{...v,category:e.target.value}:v)}/></label></div><label>Technology stack (comma separated)<input value={edit.stack.join(', ')} onChange={e=>setEdit(v=>v?{...v,stack:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)}:v)}/></label><div className="admin-double"><label>Live demo URL<input value={edit.demo_url||''} onChange={e=>setEdit(v=>v?{...v,demo_url:e.target.value||null}:v)}/></label><label>GitHub repository URL<input value={edit.repo_url||''} onChange={e=>setEdit(v=>v?{...v,repo_url:e.target.value||null}:v)}/></label></div><label>Cover image / media preview<input type="file" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" onChange={e=>{const f=e.target.files?.[0];if(f)uploadFile(f)}}/>{edit.cover_url&&<img className="admin-cover-preview" src={edit.cover_url} alt="Current project cover"/>}</label><label>Cover URL<input value={edit.cover_url||''} onChange={e=>setEdit(v=>v?{...v,cover_url:e.target.value||null}:v)}/></label><label>Video URL<input value={edit.video_url||''} onChange={e=>setEdit(v=>v?{...v,video_url:e.target.value||null}:v)}/></label><label>Sort order<input type="number" value={edit.sort_order} onChange={e=>setEdit(v=>v?{...v,sort_order:Number(e.target.value)}:v)}/></label><label className="check-label"><input type="checkbox" checked={edit.featured} onChange={e=>setEdit(v=>v?{...v,featured:e.target.checked}:v)}/> Featured project</label><label className="check-label"><input type="checkbox" checked={edit.published} onChange={e=>setEdit(v=>v?{...v,published:e.target.checked}:v)}/> Published publicly</label><button className="btn btn-primary btn-block" disabled={busy||!edit.slug||!edit.title.fa||!edit.title.en} onClick={saveProject}>{busy?<LoaderCircle className="spinning" size={18}/>:<Save size={18}/>} Save project</button></div></div></div>}</section>}function App(){
+ {edit&&<div className="overlay" onMouseDown={()=>setEdit(null)}><div className="sheet admin-edit" role="dialog" aria-modal="true" onMouseDown={e=>e.stopPropagation()}><div className="modal-top"><strong>{edit.id?'Edit project':'New project'}</strong><button className="icon-btn" onClick={()=>setEdit(null)} aria-label="Close"><X size={20}/></button></div><div className="admin-edit-fields"><label>Slug<input value={edit.slug} onChange={e=>setEdit(v=>v?{...v,slug:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')}:v)}/></label>{(['title','summary','body','role'] as const).map(field=><div className="admin-double" key={field}><label>{field} FA<textarea rows={field==='body'?4:2} value={edit[field].fa} onChange={e=>setEdit(v=>v?{...v,[field]:{...v[field],fa:e.target.value}}:v)}/></label><label>{field} EN<textarea rows={field==='body'?4:2} value={edit[field].en} onChange={e=>setEdit(v=>v?{...v,[field]:{...v[field],en:e.target.value}}:v)}/></label></div>)}<div className="admin-double"><label>Status<select value={edit.status} onChange={e=>setEdit(v=>v?{...v,status:e.target.value as ProjectStatus}:v)}>{Object.keys(statusLabels).map(s=><option key={s}>{s}</option>)}</select></label><label>Category<input value={edit.category} onChange={e=>setEdit(v=>v?{...v,category:e.target.value}:v)}/></label></div><label>Technology stack (comma separated)<input value={edit.stack.join(', ')} onChange={e=>setEdit(v=>v?{...v,stack:e.target.value.split(',').map(x=>x.trim()).filter(Boolean)}:v)}/></label><div className="admin-double"><label>Live demo URL<input value={edit.demo_url||''} onChange={e=>setEdit(v=>v?{...v,demo_url:e.target.value||null}:v)}/></label><label>GitHub repository URL<input value={edit.repo_url||''} onChange={e=>setEdit(v=>v?{...v,repo_url:e.target.value||null}:v)}/></label></div><label>Cover image / media preview<input type="file" accept="image/png,image/jpeg,image/webp,image/avif,image/gif" onChange={e=>{const f=e.target.files?.[0];if(f)uploadFile(f)}}/>{edit.cover_url&&<img className="admin-cover-preview" src={edit.cover_url} alt="Current project cover"/>}</label><label>Cover URL<input value={edit.cover_url||''} onChange={e=>setEdit(v=>v?{...v,cover_url:e.target.value||null}:v)}/></label><label>Video URL<input value={edit.video_url||''} onChange={e=>setEdit(v=>v?{...v,video_url:e.target.value||null}:v)}/></label><label>Sort order<input type="number" value={edit.sort_order} onChange={e=>setEdit(v=>v?{...v,sort_order:Number(e.target.value)}:v)}/></label><label className="check-label"><input type="checkbox" checked={edit.featured} onChange={e=>setEdit(v=>v?{...v,featured:e.target.checked}:v)}/> Featured project</label><label className="check-label"><input type="checkbox" checked={edit.published} onChange={e=>setEdit(v=>v?{...v,published:e.target.checked}:v)}/> Published publicly</label><button className="btn btn-primary btn-block" disabled={busy||!edit.slug||!edit.title.fa||!edit.title.en} onClick={saveProject}>{busy?<LoaderCircle className="spinning" size={18}/>:<Save size={18}/>} Save project</button></div></div></div>}</section>}
+function AdminIdentity({lang}:{lang:Lang}){
+ const [identity,setIdentity]=useState<{id:string,email:string}|null>(null);
+ useEffect(()=>{supabase?.auth.getUser().then(r=>{
+  const u=r.data.user;
+  if(u?.id)setIdentity({id:u.id,email:u.email||''});
+ })},[]);
+ return identity?<div className="admin-notice" dir="ltr"><strong>{identity.email}</strong><p>User UUID: <code>{identity.id}</code></p><button className="btn btn-outline" onClick={()=>navigator.clipboard.writeText(identity.id)}>{lang==='fa'?'کپی شناسه':'Copy user ID'} <Copy size={14}/></button></div>:null;
+}
+
+function App(){
  const [lang,setLang]=useState<Lang>(()=>{const match=location.pathname.match(/^\/(fa|en)(\/|$)/);return match?.[1]==='en'?'en':match?.[1]==='fa'?'fa':localStorage.getItem('mrhossein-lang')==='en'?'en':'fa'});
  const [available,setAvailable]=useState<Localized>({fa:labels.fa.availability,en:labels.en.availability});
  const [publicProjects,setPublicProjects]=useState<Project[]>([]);
