@@ -18,10 +18,36 @@ type ResponseData={data:any;error:Error|null};
 type Filter={field:string;value:string|number|boolean};
 type Order={field:string;ascending:boolean};
 const resultError=(e:unknown):ResponseData=>({data:null,error:e instanceof Error?e:new Error(String(e))});
-const jwt=async()=>{
+type AdminStatus={admin:boolean;reason:string};
+export async function getAuthToken():Promise<string>{
  if(!neonAuth)return '';
- try{const {data,error}=await neonAuth.token();if(error)throw Error(error.message);return data?.token||''}catch{return ''}
-};
+ try{
+  const session=await neonAuth.getSession();
+  const cached=session.data?.session as ({access_token?:string;token?:string}|undefined);
+  const access=cached?.access_token||cached?.token;
+  if(typeof access==='string'&&access.split('.').length===3)return access;
+ }catch{/* Use token endpoint below. */}
+ try{
+  const call=neonAuth.token as unknown as (opts?:{fetchOptions?:{credentials:'include'}})=>Promise<{data?:{token?:string};error?:{message?:string}}>;
+  const result=await call({fetchOptions:{credentials:'include'}});
+  if(result.data?.token)return result.data.token;
+ }catch{/* Try the SDK's default token request below. */}
+ try{
+  const result=await neonAuth.token();
+  return result.data?.token||'';
+ }catch{return ''}
+}
+export async function adminStatus():Promise<AdminStatus>{
+ if(!neonAuth)return {admin:false,reason:'auth_unavailable'};
+ const token=await getAuthToken();
+ if(!token)return {admin:false,reason:'token_missing'};
+ try{
+  const r=await fetch('/api/admin-status',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+  const body=await r.json() as {admin?:boolean;reason?:string};
+  return {admin:r.ok&&body.admin===true,reason:body.reason||'unknown'};
+ }catch{return {admin:false,reason:'connection_failed'}}
+}
+const jwt=getAuthToken;
 export async function cmsFetch(table:string,opts:{mode?:'select'|'insert'|'update'|'delete'|'upsert';data?:unknown;filters?:Filter[];orders?:Order[];limit?:number;auth?:boolean}={}):Promise<ResponseData>{
  try{
   const mode=opts.mode||'select';
@@ -116,11 +142,5 @@ export async function loadSetting(keyName:string):Promise<unknown>{
  const {data}=await supabase.from('portfolio_settings').select('value').eq('key',keyName).maybeSingle();
  return data?.value??null;
 }
-export async function isAdmin():Promise<boolean>{
- if(!supabase)return false;
- const {data:user}=await supabase.auth.getUser();
- if(!user.user)return false;
- const {data,error}=await supabase.from('portfolio_admins').select('user_id').eq('user_id',user.user.id).maybeSingle();
- return !error&&Boolean(data);
-}
+export async function isAdmin():Promise<boolean>{return (await adminStatus()).admin}
 export const imgSrc=(src?:string|null)=>src||'';

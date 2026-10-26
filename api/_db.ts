@@ -31,6 +31,6 @@ export const getUser=async(req:VercelRequest):Promise<string|null>=>{
 export const getAdmin=async(req:VercelRequest):Promise<string|null>=>{
  const userId=await getUser(req);
  if(!userId)return null;
- const r=await query('SELECT a.user_id FROM public.portfolio_admins a JOIN neon_auth."user" u ON u.id=a.user_id WHERE a.user_id=$1::uuid AND u."emailVerified"=true AND coalesce(u.banned,false)=false',[userId]);
+ const r=await query('SELECT user_id FROM public.portfolio_admins WHERE user_id=$1::uuid LIMIT 1',[userId]);
  return r.rowCount?userId:null;
 };

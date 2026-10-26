@@ -5,7 +5,7 @@ import {ArrowUpRight,ArrowDown,Asterisk,LockKeyhole,Plus,Trash2,Save,LogOut,Load
 import {serviceGroups,labels,type Localized} from './content';
 import CMSStudio from './CMSStudio';
 import {defaultCMS,getCMS,entryOf,entriesOf,safeUrl,type CmsEntry,type CmsSnapshot} from './cms';
-import {supabase,cmsConfigured,loadProjects,loadSetting,isAdmin,type Project,type ProjectStatus} from './db';
+import {supabase,cmsConfigured,loadProjects,loadSetting,adminStatus,type Project,type ProjectStatus} from './db';
 import './styles.css';
 import './cms.css';
 
@@ -175,6 +175,7 @@ function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[code,setCode]=useState('');
  const [authMode,setAuthMode]=useState<'signIn'|'signUp'|'verify'>('signIn');
  const [sessionReady,setSessionReady]=useState(false),[authorized,setAuthorized]=useState(false),[status,setStatus]=useState('');
+ const [authReason,setAuthReason]=useState('checking');
  const [items,setItems]=useState<Project[]>([]);
  const [inquiries,setInquiries]=useState<Array<{id:string;reference:string;full_name:string;email:string;service:string;message:string;status:string;created_at:string}>>([]);
  const [tab,setTab]=useState('site'),[edit,setEdit]=useState<null|Project>(null),[busy,setBusy]=useState(false);
@@ -198,7 +199,7 @@ function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
   supabase.auth.getSession().then(async ({data})=>{
    if(!mounted)return;
    setSessionReady(Boolean(data.session));
-   if(data.session){const ok=await isAdmin();if(!mounted)return;setAuthorized(ok);if(ok)void refresh()}
+   if(data.session){const result=await adminStatus();if(!mounted)return;setAuthorized(result.admin);setAuthReason(result.reason);if(result.admin)void refresh()}
   }).catch(()=>setSessionReady(false));
   return ()=>{mounted=false};
  },[]);
@@ -221,9 +222,9 @@ function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
    const r=await supabase.auth.signInWithPassword({email,password});
    if(r.error)throw r.error;
    setSessionReady(true);
-   const ok=await isAdmin();setAuthorized(ok);
-   if(ok)await refresh();
-   else setStatus(lang==='fa'?'ورود موفق بود؛ حساب هنوز مجوز مدیریت ندارد.':'Signed in successfully, but this account is not yet approved as admin.');
+   const result=await adminStatus();setAuthorized(result.admin);setAuthReason(result.reason);
+   if(result.admin)await refresh();
+   else setStatus(lang==='fa'?'ورود انجام شد؛ بررسی دسترسی مدیر ناموفق بود.':'Signed in, but admin verification failed.');
   }catch(err){setStatus(err instanceof Error?err.message:'Authentication failed')}
   finally{setBusy(false)}
  }
@@ -242,8 +243,19 @@ function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
   <p><button type="button" className="btn btn-outline" onClick={()=>{setStatus('');setAuthMode(authMode==='signUp'||authMode==='verify'?'signIn':'signUp')}}>{authMode==='signIn'?(lang==='fa'?'ساخت اولین حساب':'Create first account'):(lang==='fa'?'بازگشت به ورود':'Back to sign in')}</button></p>
   {status&&<p className="status-text" role="status">{status}</p>}
  </section>;
+ const authMessages:Record<string,Localized>={
+ token_missing:{fa:'نشست ورود برقرار است، اما توکن دسترسی برای سرور ارسال نشده است. یک بار خارج شو و دوباره وارد شو.',en:'Signed in, but the access token was unavailable. Sign out and sign in again.'},
+ token_invalid_or_expired:{fa:'توکن ورود توسط Neon تأیید نشد. اتصال Auth و تنظیمات Vercel باید بررسی شوند.',en:'The server could not validate your Neon access token.'},
+ admin_role_missing:{fa:'حساب در سرور شناسایی شد، اما شناسه آن در جدول مدیران همین دیتابیس پیدا نشد.',en:'Identity verified but this user ID is not in the approved admins table.'},
+ database_unavailable:{fa:'اتصال API به دیتابیس Neon خطا داد. نیازی به ثبت مجدد UUID نیست.',en:'The CMS server could not access its Neon database.'},
+ auth_config_missing:{fa:'نشانی Neon Auth در تنظیمات سرور Vercel موجود نیست.',en:'Neon Auth server URL is missing from Vercel configuration.'},
+ auth_unavailable:{fa:'Neon Auth در مرورگر هنوز پیکربندی نشده است.',en:'Neon Auth is not configured in the browser.'},
+ connection_failed:{fa:'پاسخ بررسی دسترسی از API سایت دریافت نشد.',en:'The admin status API did not respond.'},
+ checking:{fa:'دسترسی مدیر در حال بررسی است.',en:'Checking administrator access.'}
+ };
+ async function retryAdmin(){setBusy(true);const r=await adminStatus();setAuthorized(r.admin);setAuthReason(r.reason);setStatus('');if(r.admin)await refresh();setBusy(false)}
  if(!authorized)return <section className="admin-layout container"><LockKeyhole size={38}/><h1>{lang==='fa'?'حساب هنوز مجوز مدیریت ندارد':'Admin approval required'}</h1>
-  <p>{lang==='fa'?'برای فعال‌شدن پنل، شناسه حساب تأییدشده را در جدول portfolio_admins ثبت کن.':'Add your verified user ID to portfolio_admins before accessing the CMS.'}</p>
+  <p role="status">{authMessages[authReason]?.[lang]||(lang==='fa'?'دسترسی مدیر توسط سرور تأیید نشد.':'Administrator access could not be verified.')}</p><p dir="ltr">Auth check: <code>{authReason}</code></p><button className="btn btn-outline" disabled={busy} onClick={retryAdmin}>{lang==='fa'?'بررسی دوباره دسترسی':'Recheck administrator access'}</button>
   <AdminIdentity lang={lang}/>
   {status&&<p className="status-text">{status}</p>}
   <button className="btn btn-outline" onClick={()=>supabase?.auth.signOut()}>Sign out</button>
