@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {motion,useReducedMotion,useScroll,useTransform,type MotionValue} from 'framer-motion';
 import {ArrowUpRight,ArrowDown,Asterisk,LockKeyhole,Plus,Trash2,Save,LogOut,LoaderCircle,Image as ImageIcon,Settings2,X,Menu,ChevronLeft,Send,Copy} from 'lucide-react';
 import {serviceGroups,labels,type Localized} from './content';
+import {SocialIcon} from './SocialIcon';
 const AdminDashboard=React.lazy(()=>import('./AdminDashboard'));
 import {defaultCMS,getCMS,entryOf,entriesOf,safeUrl,type CmsEntry,type CmsSnapshot} from './cms';
 import {supabase,cmsConfigured,loadProjects,loadSetting,adminStatus,type Project,type ProjectStatus} from './db';
@@ -152,7 +153,7 @@ function ContactSection({lang,entries}:{lang:Lang,entries:CmsEntry[]}){
  return <section className="projects-section contact-section" id="contact"><footer className="footer-contact"><span className="footer-kicker">{c?.title[lang]??dict[lang].footer}</span>
  <a href={url||'#contact'} className="footer-title" target={url?'_blank':undefined} rel={url?'noopener noreferrer':undefined}>{c?.description[lang]??dict[lang].talk} <ArrowUpRight strokeWidth={1.4}/></a>
  <InquiryPanel lang={lang} entries={entries}/>
- <div className="footer-socials">{social.map(x=>{const link=safeUrl(x.link_url);return link?<a href={link} target="_blank" rel="noopener noreferrer" key={x.slug}>{x.title[lang]}</a>:null})}</div>
+ <div className="footer-socials footer-social-icons" aria-label={lang==='fa'?'شبکه‌های اجتماعی':'Social networks'}>{social.map(x=>{const link=safeUrl(x.link_url);const name=x.title[lang]||x.title.en||x.slug;return link?<a className="social-icon-link" href={link} target="_blank" rel="noopener noreferrer" key={x.slug} aria-label={name} title={name}><SocialIcon slug={x.slug} name={name} url={link}/></a>:null})}</div>
  <nav className="cms-custom-pages">{pages.map(x=><a key={x.slug} href={'/'+lang+'/page/'+x.slug}>{x.title[lang]}</a>)}</nav>
  <div className="footer-bottom"><span>© {new Date().getFullYear()} Mr.HoSSein. All rights reserved.</span><a href="#home">{dict[lang].top} ↑</a><a href="/admin">CMS</a></div>
  </footer></section>
@@ -279,7 +280,7 @@ function App(){
  const [cms,setCms]=useState<CmsSnapshot>({entries:defaultCMS,initialized:false,error:null});
  const isAdminRoute=location.pathname.startsWith('/admin');
  useEffect(()=>{document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr';localStorage.setItem('mrhossein-lang',lang);
-  if(!isAdminRoute&&/^(\/|\/(fa|en)\/?)$/.test(location.pathname))history.replaceState({},'','/'+lang+'/'+location.hash);
+  if(!isAdminRoute&&/^\/(fa|en)\/?$/.test(location.pathname))history.replaceState({},'','/'+lang+location.hash);
   document.title=lang==='fa'?'Mr.HoSSein | توسعه‌دهنده فول‌استک و هوش مصنوعی':'Mr.HoSSein | Full-Stack Developer · AI Engineer';
  },[lang,isAdminRoute]);
  const refreshContent=()=>{loadProjects().then(setPublicProjects).catch(()=>{});getCMS().then(setCms).catch(()=>{})};
@@ -288,7 +289,7 @@ function App(){
  const pageSlug=location.pathname.match(/^\/(?:fa\/|en\/)?page\/([a-z0-9-]+)\/?$/)?.[1];
  if(projectSlug){
   const p=publicProjects.find(x=>x.slug===projectSlug);
-  return <main className="app-shell detail-view"><a className="detail-back" href={'/'+lang+'/'}>← {lang==='fa'?'بازگشت به سایت':'Back to site'}</a><article className="detail-sheet">
+  return <main className="app-shell detail-view"><a className="detail-back" href="/">← {lang==='fa'?'بازگشت به سایت':'Back to site'}</a><article className="detail-sheet">
   {p?<><small>{lang==='fa'?'نمونه‌کار':'Case study'}</small><h1>{p.title[lang]}</h1><p className="detail-status">{statusLabels[p.status][lang]}</p>
    {safeUrl(p.cover_url,true)&&<img className="detail-cover" src={safeUrl(p.cover_url,true)} alt={p.title[lang]}/>}
    <p>{p.summary[lang]}</p><p>{p.body[lang]}</p><p>{p.role[lang]}</p><div className="detail-tech">{p.stack.map(t=><span key={t}>{t}</span>)}</div>
@@ -298,7 +299,7 @@ function App(){
  }
  if(pageSlug){
   const page=entryOf(cms.entries,'page',pageSlug);
-  return <main className="app-shell detail-view"><a className="detail-back" href={'/'+lang+'/'}>← {lang==='fa'?'بازگشت به سایت':'Back to site'}</a><article className="detail-sheet">
+  return <main className="app-shell detail-view"><a className="detail-back" href="/">← {lang==='fa'?'بازگشت به سایت':'Back to site'}</a><article className="detail-sheet">
   {page?<><h1>{page.title[lang]}</h1><p>{page.description[lang]}</p>
   {safeUrl(page.image_url,true)&&<img className="detail-cover" src={safeUrl(page.image_url,true)} alt={page.title[lang]}/>}
   <p>{page.body[lang]}</p>{safeUrl(page.link_url)&&<a className="contact-button" href={safeUrl(page.link_url)} target="_blank" rel="noopener noreferrer">{lang==='fa'?'اطلاعات بیشتر':'Learn more'} ↗</a>}</>:<h1>{lang==='fa'?'صفحه یافت نشد':'Page not found'}</h1>}

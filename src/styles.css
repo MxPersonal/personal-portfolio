@@ -70,3 +70,35 @@ html[lang='fa'] .massive-heading{line-height:1.35;padding-block:.1em .15em;lette
  .portrait-wrap img{display:block;width:100%;max-height:60svh;object-fit:contain;object-position:center center}
  .hero-title-wrap{margin-top:29px}
 }
+
+
+/* Footer social links: brand marks only, sourced from CMS entries. */
+.footer-socials.footer-social-icons{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(10px,2vw,17px);padding:38px 0 20px;direction:ltr}
+.footer-social-icons .social-icon-link{display:inline-grid;place-items:center;flex:0 0 50px;width:50px;height:50px;border-radius:999px;border:1px solid #c5d0dc66;color:#d7e2ea;background:linear-gradient(160deg,#26293065,#121316aa);box-shadow:inset 0 1px 0 #ffffff0c;opacity:1;transition:border-color .22s ease,background .22s ease,transform .22s ease,box-shadow .22s ease;color-scheme:dark}
+.footer-social-icons .social-icon-link:hover{opacity:1;color:#fff;transform:translateY(-4px);border-color:#e0e5f0c9;background:linear-gradient(145deg,#3a244a,#19171f);box-shadow:0 10px 25px #0008,0 0 0 1px #8655b344}
+.footer-social-icons .social-icon-link:focus-visible{outline:2px solid #e0e6ec;outline-offset:4px}
+.social-brand-mark{display:grid;place-items:center;width:23px;height:23px;font-size:23px;line-height:1}
+.social-brand-mark svg{display:block;width:100%;height:100%;fill:currentColor}
+.social-brand-eitaa svg,.social-brand-rubika svg,.social-brand-other svg{fill:none}
+@media(max-width:640px){.footer-socials.footer-social-icons{padding:26px 0 14px;gap:10px}.footer-social-icons .social-icon-link{height:45px;width:45px;flex-basis:45px}.social-brand-mark{width:21px;height:21px;font-size:21px}}
+@media(prefers-reduced-motion:reduce){.footer-social-icons .social-icon-link{transition:none}.footer-social-icons .social-icon-link:hover{transform:none}}
+
+
+/* Shared site/CMS visual tokens, sourced from the original Jack design. */
+:root{
+ --mr-background:#0c0c0c;
+ --mr-silver:#d7e2ea;
+ --mr-chrome:linear-gradient(180deg,#646973 0%,#BBCCD7 100%);
+ --mr-primary-gradient:linear-gradient(123deg,#18011F 7%,#B600A8 37%,#7621B0 72%,#BE4C00 100%);
+ --mr-font-fa:'Vazirmatn','Kanit',sans-serif;
+ --mr-font-en:'Kanit','Vazirmatn',sans-serif
+}
+.app-shell.admin-view:not(:has(.v3-shell)){background:var(--mr-background);color:var(--mr-silver);min-height:100vh}
+.app-shell.admin-view:not(:has(.v3-shell)) .admin-layout{padding-block:clamp(32px,6vw,84px);max-width:760px}
+.app-shell.admin-view:not(:has(.v3-shell)) .admin-layout h1{
+ background:var(--mr-chrome);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+ font-size:clamp(30px,5.5vw,65px);font-weight:900;line-height:1.3
+}
+.app-shell.admin-view:not(:has(.v3-shell)) .admin-layout .btn-primary{background:var(--mr-primary-gradient);border:2px solid #fff;border-radius:999px}
+.app-shell.admin-view:not(:has(.v3-shell)) .admin-layout input{background:#18191b;border:1px solid #b5c4cf6b;border-radius:12px}
+.app-shell.admin-view:not(:has(.v3-shell)) .admin-layout .eyebrow{color:#d7e2ea;letter-spacing:.15em}

@@ -28,5 +28,6 @@
       "source": "/page/:slug",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "trailingSlash": false
 }
