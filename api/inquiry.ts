@@ -1,5 +1,5 @@
 import type {VercelRequest,VercelResponse} from '@vercel/node';
-import {noStore,query,sameOrigin} from './_db';
+import {noStore,query,sameOrigin} from './_db.js';
 const cut=(x:unknown,max:number)=>typeof x==='string'?x.trim().slice(0,max):'';
 export default async function handler(req:VercelRequest,res:VercelResponse){
  noStore(res);

@@ -1,5 +1,5 @@
 import type {VercelRequest,VercelResponse} from '@vercel/node';
-import {getAdmin,noStore,query,sameOrigin} from './_db';
+import {getAdmin,noStore,query,sameOrigin} from './_db.js';
 
 type Spec={fields:readonly string[];key:readonly string[];public:boolean};
 const specs:Record<string,Spec>={

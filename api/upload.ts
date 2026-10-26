@@ -1,6 +1,6 @@
 import type {VercelRequest,VercelResponse} from '@vercel/node';
 import {put} from '@vercel/blob';
-import {getAdmin,noStore,sameOrigin} from './_db';
+import {getAdmin,noStore,sameOrigin} from './_db.js';
 const types=new Set(['image/jpeg','image/png','image/webp','image/avif','image/gif','video/mp4','video/webm']);
 export default async function handler(req:VercelRequest,res:VercelResponse){
  noStore(res);
