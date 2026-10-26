@@ -51,7 +51,7 @@ function validate(table:string,body:unknown){
   if(key==='stack'&&(!Array.isArray(v)||v.length>30||v.some(x=>typeof x!=='string'||x.length>80)))throw Error('Invalid stack');
   if(key==='meta'&&(!isObj(v)||JSON.stringify(v).length>15000))throw Error('Invalid meta');
   if(key==='value'&&JSON.stringify(v).length>15000)throw Error('Invalid value');
-  if(key==='key'&&(!['availability','availability_visible','cms_initialized'].includes(String(v))))throw Error('Setting not allowed');
+  if(key==='key'&&(!['availability','availability_visible','cms_initialized','availability_presets','active_availability_preset'].includes(String(v))))throw Error('Setting not allowed');
   if(key==='group_key'&&(typeof v!=='string'||v.length>100))throw Error('Invalid group');
  }
  return body;
