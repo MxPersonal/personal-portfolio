@@ -72,3 +72,10 @@ npm run build
 ## Owner decisions
 
 The original Jack artwork, sample project claims, broken `/work/*.gif` links and misleading experience metrics were removed. All currently visible bio copy is based on confirmed personal statements. The next planned decisions (#62-84) default to the robust adaptive hybrid approach, with an admin-first, privacy-aware implementation. Follow-up production enhancements (pricing workflows, richer media library and notifications) are tracked as implementation work, not silently claimed complete.
+
+
+## CMS اختصاصی / Portfolio CMS
+
+- مسیر ورود: [مدیریت محتوای سایت](https://personal-portfolio-six-amber-21.vercel.app/admin)
+- راهنمای نصب دیتابیس، احراز هویت و مدیریت کامل محتوای سایت: **[docs/CMS.md](docs/CMS.md)**
+- نسخه عمومی بدون اتصال دیتابیس با محتوای پیش‌فرض کار می‌کند. مدیریت و انتشار آنلاین نیاز به Supabase فعال و ENV معتبر دارد.
