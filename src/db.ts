@@ -3,7 +3,7 @@ import type {Localized} from './content';
 
 const authUrl=import.meta.env.VITE_NEON_AUTH_URL as string|undefined;
 export const cmsConfigured=Boolean(authUrl);
-export const neonAuth=authUrl?createAuthClient(authUrl,{fetchOptions:{credentials:'include'}}):null;
+export const neonAuth=authUrl?createAuthClient(authUrl):null;
 
 export type ProjectStatus='real'|'progress'|'concept'|'research';
 export type Project={
