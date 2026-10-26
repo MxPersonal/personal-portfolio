@@ -3,7 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {motion,useReducedMotion,useScroll,useTransform,type MotionValue} from 'framer-motion';
 import {ArrowUpRight,ArrowDown,Asterisk,LockKeyhole,Plus,Trash2,Save,LogOut,LoaderCircle,Image as ImageIcon,Settings2,X,Menu,ChevronLeft,Send,Copy} from 'lucide-react';
 import {serviceGroups,labels,type Localized} from './content';
-import AdminDashboard from './AdminDashboard';
+const AdminDashboard=React.lazy(()=>import('./AdminDashboard'));
 import {defaultCMS,getCMS,entryOf,entriesOf,safeUrl,type CmsEntry,type CmsSnapshot} from './cms';
 import {supabase,cmsConfigured,loadProjects,loadSetting,adminStatus,type Project,type ProjectStatus} from './db';
 import './styles.css';
@@ -260,7 +260,7 @@ function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
   {status&&<p className="status-text">{status}</p>}
   <button className="btn btn-outline" onClick={()=>supabase?.auth.signOut()}>Sign out</button>
  </section>;
- return <AdminDashboard lang={lang} onRefresh={onRefresh}/>;
+ return <React.Suspense fallback={<section className="admin-layout container"><LoaderCircle className="spinning" size={24}/> {lang==='fa'?'در حال بارگذاری پنل مدیریت...':'Loading CMS Studio...'}</section>}><AdminDashboard lang={lang} onRefresh={onRefresh}/></React.Suspense>;
 }
 
 function AdminIdentity({lang}:{lang:Lang}){
