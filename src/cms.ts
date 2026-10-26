@@ -18,7 +18,7 @@ export type CmsEntry={
 export type CmsSnapshot={entries:CmsEntry[];initialized:boolean;error:string|null};
 const l=(fa:string,en:string):Localized=>({fa,en});
 const empty=l('','');
-export const slugify=(text:string)=>text.toLowerCase().trim().replace(/[^a-z0-9-]/g,'-').replace(/^-+|-+$/g,'').slice(0,90);
+export const slugify=(text:string)=>text.toLowerCase().trim().replace(/\+\+/g,'-plus-plus').replace(/#/g,'-sharp').replace(/&/g,'-and').replace(/[^a-z0-9-]/g,'-').replace(/^-+|-+$/g,'').slice(0,90);
 export const safeUrl=(value:string|null|undefined,allowPath=false)=>{
  if(!value)return '';
  if(allowPath&&value.startsWith('/')&&!value.startsWith('//'))return value;

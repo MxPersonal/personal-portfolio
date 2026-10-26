@@ -97,8 +97,16 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
    return res.status(200).json({data:r.rows});
   }
   const input=req.body?.data;
-  const rows=Array.isArray(input)?input.map(x=>validate(table,x)):[validate(table,input)];
+  let rows=Array.isArray(input)?input.map(x=>validate(table,x)):[validate(table,input)];
   if(!rows.length||rows.length>120)throw Error('Invalid batch');
+  // The legacy default seed used to produce duplicate (kind,slug) keys for C and C++.
+  // PostgreSQL does not permit updating the same conflicting row twice in one INSERT.
+  // Keep the last row for duplicate keys in a single upsert request.
+  if(req.method==='POST'&&req.body?.upsert&&spec.key.length){
+   const unique=new Map<string,Record<string,unknown>>();
+   for(const row of rows)unique.set(JSON.stringify(spec.key.map(k=>row[k])),row);
+   rows=[...unique.values()];
+  }
   const keys=Object.keys(rows[0]);
   if(rows.some(d=>JSON.stringify(Object.keys(d).sort())!==JSON.stringify([...keys].sort())))throw Error('Invalid batch keys');
   if(req.method==='POST'){
