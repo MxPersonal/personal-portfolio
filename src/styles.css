@@ -262,3 +262,77 @@ html[lang='fa'] .work-skills-eyebrow{font-family:'Vazirmatn','Kanit',sans-serif;
   scrollbar-width:thin
  }
 }
+
+
+/* Footer brand icons: actual brand colors and accurate Eitaa/Rubika graphics.
+   Keep the surrounding dark/chrome Jack design and accessible icon-only links. */
+.footer-socials.footer-social-icons .social-icon-link{
+ --social-accent:#c6d0da;
+ --social-glow:transparent;
+ --social-surface:rgba(198,208,218,.09);
+ position:relative;
+ color:var(--social-accent);
+ background:linear-gradient(145deg,var(--social-surface),#101114 78%);
+ border:1px solid color-mix(in srgb,var(--social-accent) 50%,#24262a);
+ box-shadow:inset 0 1px 0 #ffffff12,0 0 0 1px #00000030;
+ transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+.footer-socials.footer-social-icons .social-icon-link:hover{
+ transform:translateY(-4px);
+ color:var(--social-accent);
+ border-color:var(--social-accent);
+ background:linear-gradient(140deg,var(--social-surface),#141416 85%);
+ box-shadow:0 10px 25px #0008,0 0 19px var(--social-glow);
+}
+.footer-social-icons .social-icon-link:has(.social-brand-github){
+ --social-accent:#f0f6fc;--social-surface:#8957e521;--social-glow:#8957e544
+}
+.footer-social-icons .social-icon-link:has(.social-brand-linkedin){
+ --social-accent:#0a91e4;--social-surface:#0a66c225;--social-glow:#0a66c255
+}
+.footer-social-icons .social-icon-link:has(.social-brand-telegram){
+ --social-accent:#2aabee;--social-surface:#229ed925;--social-glow:#229ed955
+}
+.footer-social-icons .social-icon-link:has(.social-brand-instagram){
+ --social-accent:#f45c8b;--social-surface:#e4405f22;--social-glow:#e1306c66;
+ background:linear-gradient(145deg,#833ab42b,#e1306c21,#f7773619,#101114 88%)
+}
+.footer-social-icons .social-icon-link:has(.social-brand-youtube){
+ --social-accent:#ff3355;--social-surface:#ff003322;--social-glow:#ff003355
+}
+.footer-social-icons .social-icon-link:has(.social-brand-discord){
+ --social-accent:#7983f5;--social-surface:#5865f22b;--social-glow:#5865f25a
+}
+.footer-social-icons .social-icon-link:has(.social-brand-eitaa){
+ --social-accent:#e37600;--social-surface:#e3760018;--social-glow:#e3760048
+}
+.footer-social-icons .social-icon-link:has(.social-brand-rubika){
+ --social-accent:#4ec9a9;--social-surface:#7bbd1c19;--social-glow:#70d4bc3e;
+ border-color:#80ba8b77
+}
+.footer-social-icons .social-brand-mark{
+ width:27px;height:27px;font-size:27px;
+ color:inherit;
+ display:grid;place-items:center
+}
+.footer-social-icons .social-brand-mark svg{
+ width:100%;height:100%;fill:currentColor;
+ color:inherit
+}
+.footer-social-icons .social-brand-mark .social-brand-image{
+ display:block;
+ width:100%;height:100%;
+ object-fit:contain;
+ max-width:100%;max-height:100%;
+ filter:none
+}
+.footer-social-icons .social-brand-mark .social-brand-rubika-image{
+ width:29px;height:29px;
+}
+@media(max-width:639px){
+ .footer-social-icons .social-brand-mark{width:25px;height:25px;font-size:25px}
+ .footer-social-icons .social-brand-mark .social-brand-rubika-image{width:27px;height:27px}
+}
+@media(prefers-reduced-motion:reduce){
+ .footer-socials.footer-social-icons .social-icon-link:hover{transform:none}
+}
