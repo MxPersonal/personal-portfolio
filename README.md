@@ -130,6 +130,35 @@ This is an actively evolving personal website. Database setup, administrator pro
 
 See [LICENSE](LICENSE) for the terms governing this repository.
 
+## 🧪 Developer playbook | راهنمای توسعه و کنترل کیفیت
+
+| Change | Source of truth | Verify |
+|:--|:--|:--|
+| Public content & translations | `src/content.ts`, CMS-managed records | Review FA/EN copy and directionality |
+| Hero, sections & interaction | `src/main.tsx`, `src/styles.css` | Mobile cropping, motion and readable headings |
+| CMS editorial experience | `src/CMSStudio.tsx`, `src/cms.css` | Authenticated editor and persistence |
+| Administrative overview | `src/AdminDashboard.tsx` | Server authorization and empty states |
+| Data access / permissions | `api/_db.ts`, `api/cms.ts` | Unauthorized requests must fail safely |
+| Contact and inquiry | `api/inquiry.ts` | Validation, spam controls and safe errors |
+
+**Before pushing to `main`:**
+
+~~~bash
+npm run build
+~~~
+
+- [ ] Check desktop and narrow mobile viewport, including the full hero portrait and menu behavior.
+- [ ] Test Persian RTL and English LTR, section headings, focus states and keyboard navigation.
+- [ ] Confirm `prefers-reduced-motion` produces an accessible experience.
+- [ ] Verify published content is visible and protected admin operations are not accessible anonymously.
+- [ ] Inspect browser console and deployed API errors without disclosing secrets.
+
+**A useful distinction:** a successful frontend build validates the bundle, not a live Neon account, CMS permissions, media upload or delivery of contact requests. Test those against the actual deployment.
+
+## 🧭 Contribution approach
+
+Keep UI, design tokens and CMS behavior aligned: changes to public components should be reflected in the corresponding admin preview or editing controls where relevant. Prefer small, reviewable changes and document any newly required environment variable in `.env.example`. Do not commit real credentials or personal inquiry records.
+
 <div align="center">
 
 **Built with code, curiosity & purposeful motion.** ✦
