@@ -1,86 +1,137 @@
-# Mr.HoSSein · Personal Portfolio
+<div align="center">
 
-Cinematic bilingual portfolio for **Full-Stack Development · AI Engineering · Vibe Coding · Automation**.
+<img src="./public/hero-character.webp" width="260" alt="Mr.HoSSein portfolio character" />
 
-## Stack
+# Mr.HoSSein
+### Personal Portfolio · AI Engineering · Full-Stack Development
 
-React 18, TypeScript, Vite, CSS, GSAP + ScrollTrigger, React Three Fiber + Three.js, Supabase (optional managed CMS), Vercel serverless inquiry API.
+**از یک ایده تا یک تجربه دیجیتال هوشمند.**
 
-## What's included
+A bilingual, cinematic portfolio built to present real projects, technical services, and a developer's story.
 
-- FA-first RTL + EN LTR switcher, responsive navbar and social links.
-- Character illustration sourced from the supplied personal character-sheet reference (cropped without altering identity).
-- Hero parallax / animated 3D orbital backdrop with low-motion and mobile fallback.
-- Four-chapter About story, real personal experience, skills tagged by level, future vision.
-- 15 actual selected service categories, details overlays and inquiry CTA.
-- Portfolio gallery with status badges (real / in progress / concept / experiment). **Starts empty** until genuinely documented work is published; never fabricates completed client projects or testimonials.
-- Portfolio detail pages `/project/:slug` backed by Supabase rows.
-- Public Contact workflow that attempts to securely submit through `/api/inquiry`. On an unconfigured backend, explicitly switches to Copy + Telegram contact; never falsely confirms submission.
-- `/admin`: Auth email magic link, admin whitelist check, database-backed project creation/editing, real file uploads and preview, inquiry status, availability updates. Requires Supabase activation.
-- GSAP scroll-linked reveals and perspective, with reduced-motion support; targeted R3F scene only on larger screens.
+[![React](https://img.shields.io/badge/React-18-149ECA?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Neon](https://img.shields.io/badge/Database-Neon-00E599)](https://neon.tech/)
+[![Vercel](https://img.shields.io/badge/Hosting-Vercel-black?logo=vercel)](https://vercel.com/)
 
-## Deploy to Vercel
+**[Live experience](https://personal-portfolio-x-mrhossein.vercel.app/) · [CMS guide](docs/NEON_CMS.md) · [GitHub profile](https://github.com/HosseinYazdanpanah)**
 
-Connect GitHub `MxPersonal/personal-portfolio` to Vercel, framework **Vite**, build `npm run build`, output `dist`.
+</div>
 
-Static public sections and direct Telegram contact operate without a database. Advanced CMS / inquiry persistence are **not active** until the following steps are performed.
+---
 
-### Enable CMS and server-side inquiry storage
+## ✦ درباره پروژه | Overview
 
-1. Create or reactivate a **dedicated** Supabase project of your choice. Do not automatically reuse unrelated projects.
-2. Open Supabase SQL Editor and apply `supabase/001_portfolio.sql`. This enables RLS tables and restricted Storage policies.
-3. In Supabase Auth, enable email (magic link), configure Site URL `https://personal-portfolio-six-amber-21.vercel.app` and redirect `https://personal-portfolio-six-amber-21.vercel.app/admin`.
-4. Configure Vercel Environment Variables (Production + Preview as appropriate):
-   - `VITE_SUPABASE_URL`: public Supabase project URL.
-   - `VITE_SUPABASE_ANON_KEY`: public publishable/anon key (never service-role).
-   - `SUPABASE_URL`: same project URL, **server side only**.
-   - `SUPABASE_SERVICE_ROLE_KEY`: secret Supabase service-role key, **server side only**. Never add `VITE_` prefix.
-   - For spam protection, strongly recommended: configure `TURNSTILE_SECRET_KEY` (server) and add a verified Turnstile widget to inquiry form before accepting unauthenticated requests. In its absence, server-side validation and a honeypot operate but production-grade per-IP rate limiting should be added before advertising the form.
-5. Redeploy Vercel to embed the public client variables.
-6. Visit `/admin`, request a magic link, sign in. In Supabase dashboard, find *your actual Auth user UUID*, then run:
-   `insert into public.portfolio_admins(user_id) values ('YOUR_AUTH_USER_UUID') on conflict do nothing;`
-   Sign out and back in. Do not grant access using email text alone.
-7. Add projects from `/admin`, upload covers to the restricted Storage bucket, set both FA/EN titles, verify project type and status, and enable `Published` for public display.
-8. In `/admin`, manage availability and incoming inquiries. Changes are stored in one source of truth.
+این ریپازیتوری وب‌سایت شخصی **Mr.HoSSein** است؛ پورتفولیویی برای معرفی مسیر حرفه‌ای، مهارت‌ها، خدمات توسعه وب و نرم‌افزار، مهندسی هوش مصنوعی و اتوماسیون. هدف صرفاً نمایش چند کارت نیست؛ تجربه‌ای روایی با طراحی واکنش‌گرا، حرکت سینمایی کنترل‌شده و مدیریت محتوای اختصاصی است.
 
-### Current limitations and safe defaults
+> **English:** A Persian-first, English-ready portfolio blending storytelling, interactive visuals and a database-backed content studio. Public presentation and private content management live in one repository.
 
-- No external CMS is active by default. Any inactive Supabase projects must be deliberately brought online before use.
-- Advanced admin covers and project fields are functional after DB connection; extensible case study module ordering, advanced pricing rules, file attachments on inquiry and automated notifications require further back-end implementations rather than fabricated UI claims.
-- Pricing is **always by inquiry** until actual owner-approved price rules are configured.
-- A public project image requires authorization to publish that media. Keep client data, access tokens and private architecture out of public content.
-- The hero uses a cropped character-sheet illustration as a source-faithful placeholder: replace only with an owner-approved futuristic-techwear portrait preserving exact face identity.
-- If image source is unavailable at deployment, place `public/hero-character.webp` from the supplied source asset or provide the file in GitHub.
+## ✨ Highlights
 
-## Local development
+| Experience | What's inside |
+|:--|:--|
+| 🌐 **FA / EN** | محتوای فارسی و انگلیسی با RTL / LTR متناسب |
+| 🎬 **Cinematic UI** | GSAP, ScrollTrigger, Framer Motion and responsive motion design |
+| 🪐 **3D accents** | Three.js + React Three Fiber for selected interactive scenes |
+| 🧩 **Services & skills** | گروه‌بندی خدمات توسعه نرم‌افزار، AI و اتوماسیون |
+| 🗂️ **Real portfolio** | پروژه‌های منتشرشده با عنوان، توضیحات، وضعیت و لینک‌های واقعی؛ بدون نمونه‌کار ساختگی |
+| 🛠️ **CMS Studio** | مدیریت پروژه‌ها، محتوای چندزبانه، رسانه‌ها، تنظیمات و درخواست‌ها در مسیر `/admin` |
+| ✉️ **Inquiries** | مسیر API اختصاصی برای دریافت درخواست همکاری، همراه با امکان فعال‌سازی محافظت در برابر اسپم |
+| ♿ **Adaptive** | چیدمان موبایل و دسکتاپ، fallback و احترام به `prefers-reduced-motion` |
 
-```bash
+## 🏗️ Architecture
+
+~~~text
+Browser (React 18 + Vite)
+  ├── Public portfolio (FA / EN)
+  ├── GSAP / Framer Motion / R3F
+  └── /admin · Neon Auth
+           │
+           ▼
+Vercel Serverless API
+  ├── /api/cms
+  ├── /api/admin-status
+  ├── /api/inquiry
+  ├── /api/dashboard
+  └── /api/upload
+           │
+           ▼
+Neon PostgreSQL + Neon Auth
+   (+ optional Vercel Blob uploads)
+~~~
+
+**Key paths:** `src/main.tsx` (public UI), `src/CMSStudio.tsx`, `src/AdminDashboard.tsx`, `src/content.ts` (localized baseline), `src/db.ts` (auth/data adapter), `src/styles.css`, `api/` (server-only operations), `docs/NEON_CMS.md` (current CMS setup).
+
+> **Important:** Older `supabase/` SQL and `docs/CMS.md` remain as historical material. **Do not run those Supabase migrations against Neon.** The current integration and correct administration instructions are in [docs/NEON_CMS.md](docs/NEON_CMS.md).
+
+## 🚀 Run locally
+
+**Requirements:** Node.js and npm, plus environment configuration for live CMS capabilities.
+
+~~~bash
+git clone https://github.com/MxPersonal/personal-portfolio-x-mrhossein.git
+cd personal-portfolio-x-mrhossein
 npm install
+cp .env.example .env.local
 npm run dev
-npm run build
-```
+~~~
 
-## Architecture
+Open the local address shown by Vite (typically `http://localhost:5173`).
 
-- `src/content.ts`: public owner-approved content and 15 services in FA/EN.
-- `src/db.ts`: Neon Auth session and Vercel CMS API data adapter.
-- `src/main.tsx`: localized UI, project pages, admin forms and GSAP/R3F scenes.
-- `src/styles.css`: responsive design system, accessibility and animation styles.
-- `api/inquiry.ts`: Vercel secure server endpoint for contact requests.
-- `docs/NEON_CMS.md`: current Neon database, authentication and security setup guide.
+| Command | Purpose |
+|:--|:--|
+| `npm run dev` | Start Vite development server |
+| `npm run build` | TypeScript checks + production bundle |
+| `npm run preview` | Preview built site |
 
-## Owner decisions
+### 🔐 Environment variables
 
-The original Jack artwork, sample project claims, broken `/work/*.gif` links and misleading experience metrics were removed. All currently visible bio copy is based on confirmed personal statements. The next planned decisions (#62-84) default to the robust adaptive hybrid approach, with an admin-first, privacy-aware implementation. Follow-up production enhancements (pricing workflows, richer media library and notifications) are tracked as implementation work, not silently claimed complete.
+The checked-in [`.env.example`](.env.example) is the source of truth for configuration.
 
+| Variable | Scope | Usage |
+|:--|:--|:--|
+| `VITE_NEON_AUTH_URL` | Browser | Neon Auth client URL |
+| `DATABASE_URL` | Server only | Neon PostgreSQL connection |
+| `NEON_AUTH_BASE_URL` | Server only | JWT verification / trusted auth issuer |
+| `BLOB_READ_WRITE_TOKEN` | Server only | Optional media uploads via Vercel Blob |
+| `VITE_TURNSTILE_SITE_KEY` | Browser | Optional Turnstile widget |
+| `TURNSTILE_SECRET_KEY` | Server only | Optional Turnstile verification |
 
+Never expose `DATABASE_URL`, service credentials, or upload tokens as `VITE_*`. A local Vite dev server does **not** automatically emulate the Vercel serverless APIs: CMS and inquiry persistence require a correctly configured deployment/runtime.
 
-## CMS اختصاصی / Neon integration
+## 🧭 Admin & publication
 
-- مخزن فعلی GitHub: `MxPersonal/personal-portfolio-x-mrhossein`
-- ورود مدیر: [Mr.HoSSein CMS](https://personal-portfolio-x-mrhossein.vercel.app/admin)
-- راهنمای فعلی راه‌اندازی Neon و معرفی حساب مدیر: **[docs/NEON_CMS.md](docs/NEON_CMS.md)**
-- Neon Auth برای ورود Email + Password و OTP تأیید ایمیل استفاده می‌شود. دسترسی مدیر جداگانه در جدول `portfolio_admins` بررسی می‌شود.
-- دیتابیس خصوصی با `DATABASE_URL` و `NEON_AUTH_BASE_URL` **فقط در Vercel Serverless API** قابل دسترسی است.
-- پنج جدول `portfolio_*` قبلاً در Neon ساخته شده‌اند و RLS آن‌ها فعال است. فایل‌های `supabase/*.sql` صرفاً برای آرشیو هستند؛ آن‌ها را روی Neon اجرا نکن.
-- برای آپلود فایل (تا 4MB)، Vercel Blob باید در پروژه فعال و متغیر `BLOB_READ_WRITE_TOKEN` موجود باشد. لینک‌های HTTPS رسانه بدون Blob هم قابل استفاده‌اند.
+1. Configure the Neon ↔ Vercel integration and check that required environment variables exist for the target environment.
+2. Follow [**Neon CMS Integration**](docs/NEON_CMS.md) to register and approve **your own** administrator account. Access is not granted solely by possessing an email address.
+3. Open `/admin`, sign in, and edit the multilingual content and project entries.
+4. Publish only genuine projects and media you are permitted to share.
+5. Recheck both `/fa` and `/en` plus the mobile layout after substantial content changes.
+
+Changes to code pushed to `main` are deployed through the connected GitHub/Vercel pipeline. Content changes stored in Neon do not normally need a code commit.
+
+## 🛡️ Security & truthful documentation
+
+- Protected admin mutations are checked **server-side**, with JWT verification and administrator allowlisting.
+- Public access should return only published content; secrets stay on the server.
+- For a public inquiry form, configure **both** client and server Turnstile settings and consider production-grade rate limits before promoting it.
+- The presence of an integration or UI does **not** guarantee that the external service is configured for a given deployment.
+- Demo badges, unsupported uptime percentages, fictitious user statistics and made-up testimonials are deliberately excluded.
+
+## 🔎 Project status
+
+This is an actively evolving personal website. Database setup, administrator provisioning, upload credentials, and live service readiness are **deployment-specific** and should be verified before assuming they work. The source code documents implemented routes and adapters, not third-party account activation.
+
+## 🤝 Contact
+
+[GitHub](https://github.com/HosseinYazdanpanah) · [LinkedIn](https://www.linkedin.com/in/hossein-yazdanpanah-0206b93ab/) · [Telegram](https://t.me/Hosssein_0905)
+
+## 📄 License
+
+See [LICENSE](LICENSE) for the terms governing this repository.
+
+<div align="center">
+
+**Built with code, curiosity & purposeful motion.** ✦
+
+</div>
