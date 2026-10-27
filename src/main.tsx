@@ -87,20 +87,58 @@ function HeroSection({lang,setLang,available,entries}:{lang:Lang,setLang:(l:Lang
  <small className="hero-role" dir="ltr">{typeof h?.meta.role==='string'?h.meta.role:'FULL-STACK • AI ENGINEER • VIBE CODER'}</small></FadeIn><FadeIn delay={.5} y={20}><ContactButton lang={lang}/></FadeIn></div>
  <a href="#work" className="scroll-cue" aria-label="Scroll down"><ArrowDown size={16}/></a></section>
 }
-function WorkTile({item,index,total}:{item:CmsEntry,index:number,total:number}){
- const media=safeUrl(item.image_url,true),video=media&&/\.(mp4|webm)(\?|$)/i.test(media);
- return <div className="work-tile" style={{'--tile-color':colors[index%colors.length]} as React.CSSProperties} aria-label={item.title.en}>
- {media?(video?<video src={media} preload="none" playsInline muted loop autoPlay/>:<img src={media} alt={item.title.en} loading="lazy"/>):<><div className="tile-decoration"/><div className="tile-orbit"/></>}
- <div className="tile-wordmark">{item.title.en||item.title.fa}</div><span className="tile-index">{String(index+1).padStart(2,'0')} / {total}</span>
- </div>
+const skillNameKey=(name:string)=>name.toLowerCase().replace(/\+/g,'plus').replace(/[^a-z0-9]/g,'');
+const faSkillNames:Record<string,string>={
+ webapps:'وب‌اپلیکیشن‌ها',fullstack:'توسعه فول‌استک',backend:'بک‌اند',
+ api:'رابط‌های برنامه‌نویسی',aiagents:'عامل‌های هوش مصنوعی',
+ vibecoding:'وایب کدینگ',automation:'اتوماسیون',
+ chatbots:'چت‌بات‌ها',rag:'سیستم‌های RAG'
+};
+function skillDisplayName(item:CmsEntry,lang:Lang){
+ const english=item.title.en?.trim()||item.title.fa?.trim()||item.slug;
+ const localized=item.title[lang]?.trim();
+ if(lang==='fa'&&(!localized||localized.toLocaleLowerCase()===english.toLocaleLowerCase())){
+  return faSkillNames[skillNameKey(english)]||localized||english;
+ }
+ return localized||english;
 }
-function MarqueeSection({entries}:{entries:CmsEntry[]}){
- const target=useRef<HTMLElement>(null),[offset,setOffset]=useState(0),reduced=useReducedMotion();
- const media=entriesOf(entries,'gallery'),first=media.filter(m=>m.group_key==='first'),second=media.filter(m=>m.group_key!=='first');
- const rows=[first.length?first:media.slice(0,Math.ceil(media.length/2)),second.length?second:media.slice(Math.ceil(media.length/2))];
- useEffect(()=>{if(reduced)return;let raf=0;const update=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{const top=target.current?.getBoundingClientRect().top??0;setOffset((-top+window.innerHeight)*.3)})};update();window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);return()=>{cancelAnimationFrame(raf);window.removeEventListener('scroll',update);window.removeEventListener('resize',update)}},[reduced]);
- if(!media.length)return null;
- return <section className="work-section" id="work" ref={target} aria-label="Selected work">{rows.map((row,r)=>row.length?<div key={r} className="marquee-row" style={{transform:reduced?'none':'translate3d('+(r===0?((offset-200)%432)-432:-((offset-200)%432)-650)+'px,0,0)'}}>{[...row,...row,...row].map((item,i)=><WorkTile key={r+'-'+i} item={item} index={i%row.length} total={row.length}/>)}</div>:null)}</section>
+function WorkTile({item,index,total,lang}:{item:CmsEntry,index:number,total:number,lang:Lang}){
+ const media=safeUrl(item.image_url,true),video=media&&/\.(mp4|webm)(\?|$)/i.test(media);
+ const title=skillDisplayName(item,lang);
+ return <article className="work-tile" style={{'--tile-color':colors[index%colors.length]} as React.CSSProperties} aria-label={title}>
+  {media?(video?<video src={media} preload="none" playsInline muted loop autoPlay aria-hidden="true"/>:<img src={media} alt="" loading="lazy"/>):<><div className="tile-decoration"/><div className="tile-orbit"/></>}
+  <h3 className="tile-wordmark" lang={lang} dir={lang==='fa'?'rtl':'ltr'}>{title}</h3>
+  <span className="tile-index" dir="ltr">{String(index+1).padStart(2,'0')} / {String(total).padStart(2,'0')}</span>
+ </article>;
+}
+function MarqueeSection({entries,lang}:{entries:CmsEntry[],lang:Lang}){
+ const gallery=entriesOf(entries,'gallery'),skills=entriesOf(entries,'skill');
+ const rows:CmsEntry[][]=[[],[]];
+ // Preserve CMS gallery's first/second row assignment and user-defined ordering.
+ gallery.forEach((item,index)=>{
+  const row=item.group_key==='first'?0:item.group_key==='second'?1:index%2;
+  rows[row].push(item);
+ });
+ // Include every published CMS skill, not only the smaller original gallery list.
+ // Normalize carefully so C and C++ remain separate and duplicates never reappear.
+ const present=new Set(gallery.map(item=>skillNameKey(item.title.en||item.title.fa)));
+ for(const item of skills){
+  const key=skillNameKey(item.title.en||item.title.fa);
+  if(present.has(key))continue;
+  rows[rows[0].length<=rows[1].length?0:1].push(item);
+  present.add(key);
+ }
+ if(!rows.some(row=>row.length))return null;
+ return <section className="work-section work-skills-marquee" id="work" aria-label={lang==='fa'?'مهارت‌ها و فناوری‌های من':'My skills and technologies'}>
+  <p className="work-skills-eyebrow">{lang==='fa'?'مهارت‌ها و فناوری‌ها':'SKILLS & TECHNOLOGIES'}</p>
+  {rows.map((row,r)=>row.length?<div key={r} className={'marquee-row skills-marquee-viewport marquee-direction-'+r} dir="ltr">
+    <div className="skills-marquee-track" style={{'--marquee-duration':Math.max(38,row.length*5.4)+'s'} as React.CSSProperties}>
+     {[0,1].map(copy=><div className="skills-marquee-set" key={copy} aria-hidden={copy===1?'true':undefined}>
+      {row.map((item,i)=><WorkTile key={item.kind+'-'+item.slug+'-'+copy} item={item} index={i} total={row.length} lang={lang}/>)}
+     </div>)}
+    </div>
+   </div>:null)}
+ </section>;
 }
 function Letter({char,index,count,progress}:{char:string,index:number,count:number,progress:MotionValue<number>}){
  const from=Math.max(0,index/count-.08),to=Math.min(1,index/count+.11);
@@ -309,7 +347,7 @@ function App(){
  return <main className="app-shell">{entriesOf(cms.entries,'section').map(section=>{
   switch(section.slug){
    case 'home':return <HeroSection key="home" lang={lang} setLang={setLang} available={available} entries={cms.entries}/>;
-   case 'work':return <MarqueeSection key="work" entries={cms.entries}/>;
+   case 'work':return <MarqueeSection key="work" lang={lang} entries={cms.entries}/>;
    case 'about':return <AboutSection key="about" lang={lang} entries={cms.entries}/>;
    case 'services':return <ServicesSection key="services" lang={lang} entries={cms.entries}/>;
    case 'projects':return <ProjectsSection key="projects" lang={lang} dbProjects={publicProjects} entries={cms.entries} initialized={cms.initialized}/>;
