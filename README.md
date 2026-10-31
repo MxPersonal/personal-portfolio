@@ -36,7 +36,7 @@ A bilingual, cinematic portfolio built to present real projects, technical servi
 | 🪐 **3D accents** | Three.js + React Three Fiber for selected interactive scenes |
 | 🧩 **Services & skills** | گروه‌بندی خدمات توسعه نرم‌افزار، AI و اتوماسیون |
 | 🗂️ **Real portfolio** | پروژه‌های منتشرشده با عنوان، توضیحات، وضعیت و لینک‌های واقعی؛ بدون نمونه‌کار ساختگی |
-| 🛠️ **CMS Studio** | مدیریت پروژه‌ها، محتوای چندزبانه، رسانه‌ها، تنظیمات و درخواست‌ها در مسیر `/admin` |
+| 🛠️ **CMS Studio** | مدیریت پروژه‌ها، محتوای چندزبانه، رسانه‌ها، تنظیمات و درخواست‌ها در یک مسیر اختصاصی و بدون لینک عمومی |
 | ✉️ **Inquiries** | مسیر API اختصاصی برای دریافت درخواست همکاری، همراه با امکان فعال‌سازی محافظت در برابر اسپم |
 | ♿ **Adaptive** | چیدمان موبایل و دسکتاپ، fallback و احترام به `prefers-reduced-motion` |
 
@@ -46,7 +46,7 @@ A bilingual, cinematic portfolio built to present real projects, technical servi
 Browser (React 18 + Vite)
   ├── Public portfolio (FA / EN)
   ├── GSAP / Framer Motion / R3F
-  └── /admin · Neon Auth
+  └── Private admin UI · Neon Auth
            │
            ▼
 Vercel Serverless API
@@ -104,7 +104,7 @@ Never expose `DATABASE_URL`, service credentials, or upload tokens as `VITE_*`. 
 
 1. Configure the Neon ↔ Vercel integration and check that required environment variables exist for the target environment.
 2. Follow [**Neon CMS Integration**](docs/NEON_CMS.md) to register and approve **your own** administrator account. Access is not granted solely by possessing an email address.
-3. Open `/admin`, sign in, and edit the multilingual content and project entries.
+3. Open the administrator-only URL saved privately, sign in, and edit the multilingual content and project entries.
 4. Publish only genuine projects and media you are permitted to share.
 5. Recheck both `/fa` and `/en` plus the mobile layout after substantial content changes.
 
