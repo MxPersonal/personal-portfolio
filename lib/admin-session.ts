@@ -12,7 +12,7 @@ export const adminConfigured=()=>{
 const safeMatch=(first:string,second:string)=>{
  const a=createHash('sha256').update(first).digest();
  const b=createHash('sha256').update(second).digest();
- return timingSafeEqual(a,b);
+ return timingSafeEqual(Uint8Array.from(a),Uint8Array.from(b));
 };
 export const validCredentials=(email:unknown,password:unknown)=>{
  if(!adminConfigured()||typeof email!=='string'||typeof password!=='string')return false;
@@ -21,7 +21,7 @@ export const validCredentials=(email:unknown,password:unknown)=>{
 };
 const key=()=>createHmac('sha256',process.env.ADMIN_PASSWORD!)
  .update('mrhossein-cms-cookie-v1:'+process.env.ADMIN_EMAIL!.trim().toLowerCase()).digest();
-const signature=(value:string)=>createHmac('sha256',key()).update(value).digest();
+const signature=(value:string)=>createHmac('sha256',Uint8Array.from(key())).update(value).digest();
 const cookieHeader=(token:string,maxAge:number)=>COOKIE+'='+token+'; Path=/; Max-Age='+maxAge+'; HttpOnly; Secure; SameSite=Strict';
 export const createAdminSession=(res:VercelResponse)=>{
  const expires=Date.now()+SESSION_SECONDS*1000;
@@ -41,6 +41,6 @@ export const hasAdminSession=(req:VercelRequest)=>{
  try{
   const actual=Buffer.from(parts[3],'base64url');
   const expected=signature(parts.slice(0,3).join('.'));
-  return actual.length===expected.length&&timingSafeEqual(actual,expected);
+  return actual.length===expected.length&&timingSafeEqual(Uint8Array.from(actual),Uint8Array.from(expected));
  }catch{return false}
 };
