@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useMemo,useState} from 'react';
 import axios from 'axios';
 import {Activity,ArrowDown,ArrowLeft,ArrowRight,ArrowUp,ArrowUpRight,Check,CheckCircle2,ChevronDown,Copy,ExternalLink,FolderKanban,Image as ImageIcon,Layers3,LayoutDashboard,LoaderCircle,Menu,MessageSquare,Plus,RefreshCw,Save,Search,Settings2,ShieldCheck,SlidersHorizontal,Trash2,X} from 'lucide-react';
-import {getAuthToken,supabase,type Project,type ProjectStatus} from './db';
+import {adminLogout,supabase,type Project,type ProjectStatus} from './db';
 import {blankEntry,CMS_KINDS,kindLabels,slugify,safeUrl,type CmsEntry,type CmsKind} from './cms';
 import type {Lang,Localized} from './content';
 import './admin-v3.css';
@@ -54,16 +54,14 @@ export default function AdminDashboard({lang,onRefresh}:{lang:Lang;onRefresh:()=
  const [presetsDirty,setPresetsDirty]=useState(false);
 
  const request=useCallback(async(method:'GET'|'POST'|'PATCH'|'DELETE',endpoint:string,body?:unknown)=>{
-  const token=await getAuthToken();
-  if(!token)throw Error(lang==='fa'?'توکن ورود موجود نیست. دوباره وارد شو.':'No access token; please sign in again.');
   try{
-   const result=await axios({method,url:endpoint,data:body,headers:{Authorization:'Bearer '+token},timeout:22000});
+   const result=await axios({method,url:endpoint,data:body,withCredentials:true,timeout:22000});
    return result.data;
   }catch(e){
    if(axios.isAxiosError(e))throw Error(typeof e.response?.data?.error==='string'?e.response.data.error:e.message);
    throw e;
   }
- },[lang]);
+ },[]);
  const reload=useCallback(async()=>{
   setLoading(true);setError('');
   try{
@@ -215,7 +213,7 @@ export default function AdminDashboard({lang,onRefresh}:{lang:Lang;onRefresh:()=
    <div className="v3-brand"><span className="v3-brand-icon"><Layers3 size={24}/></span><div><strong>Mr.HoSSein</strong><small>PORTFOLIO STUDIO / V3</small></div><button className="v3-menuclose" onClick={()=>setMobileMenu(false)}><X size={18}/></button></div>
    <div className="v3-sideheading">{t.workspace}</div>
    <nav aria-label="CMS Navigation">{sideTabs.map((it,i)=><React.Fragment key={it.id}>{i===4&&<div className="v3-sideheading">{t.content}</div>}<button className={tab===it.id?'current':''} onClick={()=>choose(it.id)}><PanelIcon tab={it.id}/><span>{it.name}</span>{typeof it.count==='number'&&<small>{it.count}</small>}</button></React.Fragment>)}</nav>
-   <div className="v3-sidebottom"><div><ShieldCheck size={17}/>{lang==='fa'?'ورود امن با Neon Auth':'Secured by Neon Auth'}</div><a href="/"><ExternalLink size={16}/>{t.preview}</a><button onClick={()=>supabase?.auth.signOut()}>{lang==='fa'?'خروج از حساب':'Sign out'} <ArrowUpRight size={16}/></button></div>
+   <div className="v3-sidebottom"><div><ShieldCheck size={17}/>{lang==='fa'?'ورود امن با نشست مدیر':'Secured by admin session'}</div><a href="/"><ExternalLink size={16}/>{t.preview}</a><button onClick={()=>void adminLogout().catch(e=>setError(e instanceof Error?e.message:t.failed))}>{lang==='fa'?'خروج از حساب':'Sign out'} <ArrowUpRight size={16}/></button></div>
   </aside>
   <main className="v3-main">
    <header className="v3-header"><div className="v3-heading-crumb">WORKSPACE <span>/</span> {tab.toUpperCase()}</div><div className="v3-header-actions"><button title={t.refresh} onClick={reload}><RefreshCw size={17}/></button><a href="/" ><ExternalLink size={16}/>{t.preview}</a></div></header>

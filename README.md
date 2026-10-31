@@ -46,7 +46,7 @@ A bilingual, cinematic portfolio built to present real projects, technical servi
 Browser (React 18 + Vite)
   ├── Public portfolio (FA / EN)
   ├── GSAP / Framer Motion / R3F
-  └── Private admin UI · Neon Auth
+  └── Private admin UI · Server-side session
            │
            ▼
 Vercel Serverless API
@@ -57,9 +57,11 @@ Vercel Serverless API
   └── /api/upload
            │
            ▼
-Neon PostgreSQL + Neon Auth
+Neon PostgreSQL + environment-based admin authentication
    (+ optional Vercel Blob uploads)
 ~~~
+
+**Private CMS login:** Add server-only `ADMIN_EMAIL` and `ADMIN_PASSWORD` (minimum 16 characters) to Vercel Production, and retain Neon `DATABASE_URL` for content storage. No environment-based admin authentication sign-up, OTP or UUID approval is needed. Details: [CMS setup](docs/NEON_CMS.md).
 
 **Key paths:** `src/main.tsx` (public UI), `src/CMSStudio.tsx`, `src/AdminDashboard.tsx`, `src/content.ts` (localized baseline), `src/db.ts` (auth/data adapter), `src/styles.css`, `api/` (server-only operations), `docs/NEON_CMS.md` (current CMS setup).
 
@@ -91,7 +93,7 @@ The checked-in [`.env.example`](.env.example) is the source of truth for configu
 
 | Variable | Scope | Usage |
 |:--|:--|:--|
-| `VITE_NEON_AUTH_URL` | Browser | Neon Auth client URL |
+| `VITE_NEON_AUTH_URL` | Browser | environment-based admin authentication client URL |
 | `DATABASE_URL` | Server only | Neon PostgreSQL connection |
 | `NEON_AUTH_BASE_URL` | Server only | JWT verification / trusted auth issuer |
 | `BLOB_READ_WRITE_TOKEN` | Server only | Optional media uploads via Vercel Blob |
@@ -103,7 +105,7 @@ Never expose `DATABASE_URL`, service credentials, or upload tokens as `VITE_*`. 
 ## 🧭 Admin & publication
 
 1. Configure the Neon ↔ Vercel integration and check that required environment variables exist for the target environment.
-2. Follow [**Neon CMS Integration**](docs/NEON_CMS.md) to register and approve **your own** administrator account. Access is not granted solely by possessing an email address.
+2. Follow [**Neon CMS Integration**](docs/NEON_CMS.md) to configure **your own server-side environment credentials**. Access is not granted solely by possessing an email address.
 3. Open the administrator-only URL saved privately, sign in, and edit the multilingual content and project entries.
 4. Publish only genuine projects and media you are permitted to share.
 5. Recheck both `/fa` and `/en` plus the mobile layout after substantial content changes.
@@ -112,7 +114,7 @@ Changes to code pushed to `main` are deployed through the connected GitHub/Verce
 
 ## 🛡️ Security & truthful documentation
 
-- Protected admin mutations are checked **server-side**, with JWT verification and administrator allowlisting.
+- Protected admin mutations are checked **server-side**, with JWT verification and signed HttpOnly administrator sessions.
 - Public access should return only published content; secrets stay on the server.
 - For a public inquiry form, configure **both** client and server Turnstile settings and consider production-grade rate limits before promoting it.
 - The presence of an integration or UI does **not** guarantee that the external service is configured for a given deployment.

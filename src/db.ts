@@ -1,9 +1,6 @@
-import {createAuthClient} from '@neondatabase/neon-js/auth';
 import type {Localized} from './content';
 
-const authUrl=import.meta.env.VITE_NEON_AUTH_URL as string|undefined;
-export const cmsConfigured=Boolean(authUrl);
-export const neonAuth=authUrl?createAuthClient(authUrl):null;
+export const cmsConfigured=true;
 
 export type ProjectStatus='real'|'progress'|'concept'|'research';
 export type Project={
@@ -19,45 +16,32 @@ type Filter={field:string;value:string|number|boolean};
 type Order={field:string;ascending:boolean};
 const resultError=(e:unknown):ResponseData=>({data:null,error:e instanceof Error?e:new Error(String(e))});
 type AdminStatus={admin:boolean;reason:string};
-export async function getAuthToken():Promise<string>{
- if(!neonAuth)return '';
- try{
-  const session=await neonAuth.getSession();
-  const cached=session.data?.session as ({access_token?:string;token?:string}|undefined);
-  const access=cached?.access_token||cached?.token;
-  if(typeof access==='string'&&access.split('.').length===3)return access;
- }catch{/* Use token endpoint below. */}
- try{
-  const call=neonAuth.token as unknown as (opts?:{fetchOptions?:{credentials:'include'}})=>Promise<{data?:{token?:string};error?:{message?:string}}>;
-  const result=await call({fetchOptions:{credentials:'include'}});
-  if(result.data?.token)return result.data.token;
- }catch{/* Try the SDK's default token request below. */}
- try{
-  const result=await neonAuth.token();
-  return result.data?.token||'';
- }catch{return ''}
-}
 export async function adminStatus():Promise<AdminStatus>{
- if(!neonAuth)return {admin:false,reason:'auth_unavailable'};
- const token=await getAuthToken();
- if(!token)return {admin:false,reason:'token_missing'};
  try{
-  const r=await fetch('/api/admin-status',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+  const r=await fetch('/api/admin-status',{credentials:'same-origin',cache:'no-store'});
   const body=await r.json() as {admin?:boolean;reason?:string};
   return {admin:r.ok&&body.admin===true,reason:body.reason||'unknown'};
  }catch{return {admin:false,reason:'connection_failed'}}
 }
-const jwt=getAuthToken;
+export async function adminLogin(email:string,password:string):Promise<void>{
+ const r=await fetch('/api/admin-session',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password}),cache:'no-store'});
+ const response=await r.json() as {error?:string};
+ if(!r.ok)throw new Error(response.error||'Admin login failed');
+}
+export async function adminLogout():Promise<void>{
+ const r=await fetch('/api/admin-session',{method:'DELETE',credentials:'same-origin',cache:'no-store'});
+ if(!r.ok)throw new Error('Could not sign out');
+ window.location.assign('/cms/admin');
+}
 export async function cmsFetch(table:string,opts:{mode?:'select'|'insert'|'update'|'delete'|'upsert';data?:unknown;filters?:Filter[];orders?:Order[];limit?:number;auth?:boolean}={}):Promise<ResponseData>{
  try{
   const mode=opts.mode||'select';
-  const token=await jwt();
   const headers:Record<string,string>={'Content-Type':'application/json'};
-  if(token)headers.Authorization='Bearer '+token;
   const params=new URLSearchParams({table,filters:JSON.stringify(opts.filters||[]),orders:JSON.stringify(opts.orders||[]),limit:String(opts.limit||100)});
   const response=await fetch('/api/cms'+(mode==='select'?'?'+params.toString():''),{
    method:mode==='select'?'GET':mode==='update'?'PATCH':mode==='delete'?'DELETE':'POST',
    headers,
+   credentials:'same-origin',
    ...(mode==='select'?{}:{body:JSON.stringify({table,data:opts.data,filters:opts.filters,upsert:mode==='upsert'})})
   });
   const payload=await response.json();
@@ -90,47 +74,21 @@ class Query implements PromiseLike<ResponseData>{
 async function upload(_bucket:string,path:string,file:File){
  try{
   if(!file.size||file.size>4*1024*1024)throw Error('Upload limit: 4 MB. Use a hosted image URL for larger media.');
-  const token=await jwt();
-  if(!token)throw Error('Sign in to upload files');
   const bytes=new Uint8Array(await file.arrayBuffer());let binary='';
   for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.slice(i,i+0x8000));
-  const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({name:path,type:file.type,data:btoa(binary)})});
+  const r=await fetch('/api/upload',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:path,type:file.type,data:btoa(binary)})});
   const response=await r.json();
   if(!r.ok)throw Error(response.error||'Upload failed');
   return {data:{path:response.url},error:null};
  }catch(e){return resultError(e)}
 }
-export const supabase=cmsConfigured?{
+export const supabase={
  from:(table:string)=>new Query(table),
- auth:{
-  getSession:async()=>{
-   if(!neonAuth)return {data:{session:null}};
-   try{const r=await neonAuth.getSession();return {data:{session:r.data?.session??null}}}catch{return {data:{session:null}}}
-  },
-  getUser:async()=>{
-   if(!neonAuth)return {data:{user:null}};
-   try{const r=await neonAuth.getSession();return {data:{user:r.data?.user??null}}}catch{return {data:{user:null}}}
-  },
-  signOut:async()=>{if(!neonAuth)return;await neonAuth.signOut();window.location.assign('/admin')},
-  signInWithPassword:async({email,password}:{email:string;password:string})=>{
-   if(!neonAuth)return {error:new Error('Auth unavailable')};
-   const r=await neonAuth.signIn.email({email,password});return {error:r.error?new Error(r.error.message):null}
-  },
-  signUpWithPassword:async({email,password}:{email:string;password:string})=>{
-   if(!neonAuth)return {error:new Error('Auth unavailable'),requiresVerification:false};
-   const r=await neonAuth.signUp.email({name:email.split('@')[0]||'Portfolio Admin',email,password});
-   return {error:r.error?new Error(r.error.message):null,requiresVerification:!!r.data?.user&&!r.data.user.emailVerified}
-  },
-  verifyEmail:async({email,otp}:{email:string;otp:string})=>{
-   if(!neonAuth)return {error:new Error('Auth unavailable')};
-   const r=await neonAuth.emailOtp.verifyEmail({email,otp});return {error:r.error?new Error(r.error.message):null}
-  }
- },
  storage:{from:(bucket:string)=>({
   upload:(path:string,file:File,_options?:unknown)=>upload(bucket,path,file),
   getPublicUrl:(path:string)=>({data:{publicUrl:path}})
  })}
-}:null;
+};
 
 export async function loadProjects():Promise<Project[]>{
  if(!supabase)return [];

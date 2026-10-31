@@ -1,76 +1,53 @@
-# Neon CMS Integration / راه‌اندازی پنل اختصاصی
+# Mr.HoSSein CMS: secure environment-variable administrator login
 
-## Status and identifiers
+The CMS route is intentionally absent from public navigation and footer. Use the private administrator URL saved by the site owner. A hidden address alone does not secure CMS access: every privileged API validates a signed server-side session.
 
-- GitHub: `MxPersonal/personal-portfolio-x-mrhossein`
-- Vercel: `hosseinyazdanpanahs-projects/personal-portfolio`
-- Neon: `personal-portfolio-db`, project ID `icy-mode-87886981`, database `neondb`, branch `main`.
-- CMS: administrator-only URL (not linked from the public site; refer to deployment routing configuration).
-- This integration replaces the previous Supabase frontend client and inquiry backend.
+## Set up Vercel Production environment
 
-## Completed in the Neon Console
+In Vercel > personal-portfolio > Settings > Environment Variables, add these variables yourself:
 
-Five tables already exist under `public` and have RLS enabled:
+| Name | Visibility | Purpose |
+| --- | --- | --- |
+| ADMIN_EMAIL | Server only | Email for the sole CMS administrator |
+| ADMIN_PASSWORD | Server only | Strong unique password, at least 16 characters (20+ recommended) |
+| DATABASE_URL | Server only | Existing Neon PostgreSQL database used for CMS content |
+| BLOB_READ_WRITE_TOKEN | Server only, optional | Enables media uploads via Vercel Blob |
 
-`portfolio_admins`, `portfolio_projects`, `portfolio_cms_entries`, `portfolio_settings`, `portfolio_inquiries`.
+Never use a VITE_ prefix for the administrator email or password, and never commit or share the real values.
 
-**Do not execute** the old files `supabase/001_portfolio.sql` or `supabase/002_cms.sql` in Neon. They contain Supabase-specific SQL and access policies. The Neon schema already exists.
+The former Neon Auth email sign-up, OTP and user UUID allowlist are not required for this CMS login. NEON_AUTH_BASE_URL and VITE_NEON_AUTH_URL are no longer consumed by the login code. Existing database tables and data remain unchanged.
 
-## Server-to-database connection and security
+1. Save ADMIN_EMAIL and ADMIN_PASSWORD in the Production environment. The user enters the actual values; this project includes only empty examples.
+2. Verify DATABASE_URL is still configured. Without it, login can work but the CMS dashboard cannot load or persist content.
+3. Make sure a Production deployment uses the new environment settings. A push to main triggers Vercel deployment automatically.
+4. Open the private CMS URL using HTTPS, enter the email and password, and sign in. There is no account registration or verification code.
+5. Log out from the CMS sidebar. Reopen the private address to sign in again.
 
-The CMS entry route is deliberately absent from public navigation and marked `noindex` at the hosting layer. This hides the entry point from ordinary browsing, but is **not** a security boundary: Neon authentication and server-side `portfolio_admins` authorization are mandatory.
+## Session and API security
 
-The Vercel ↔ Neon integration supplies **server-only** `DATABASE_URL`, `NEON_AUTH_BASE_URL` and the browser-safe `VITE_NEON_AUTH_URL`. Ensure these variables target **Production**. Passwords and connection URLs must NEVER be checked into GitHub or put in `VITE_...` variables.
+- POST /api/admin-session verifies the server-only credentials and sets a signed cookie with the HttpOnly, Secure, SameSite=Strict and Path=/ attributes. Session lifetime: 8 hours.
+- DELETE /api/admin-session clears that cookie; GET /api/admin-status checks only the validity of the current session.
+- Protected CMS CRUD, dashboard, and upload APIs use server-side getAdmin to check the same signed cookie. Write operations also check request origin.
+- Password rotation invalidates every previously signed cookie. Use a unique random password.
+- Login attempts are throttled per serverless instance. This is a best-effort measure, **not a globally coordinated limiter**. Configure platform WAF/rate limiting for stronger protection; verify availability and pricing on your plan.
+- No administrator credentials or session tokens are saved in localStorage. A valid HttpOnly cookie is required; an email field or fake role never grants access.
+- The public CMS read endpoint continues to expose only published content and approved public settings.
 
-- The public Vercel endpoint `GET /api/cms` returns **only** published projects and CMS entries; it allows only a small set of public settings. It never returns inquiries/admin records.
-- The other methods (and non-public reads) require a JWT from Neon Auth, cryptographically verified with the Neon JWKS and a corresponding **verified, unbanned Neon user whose ID exists in `portfolio_admins`**.
-- The backend uses parameterized SQL, whitelisted table names/columns, and checks same-origin for writes. It does not trust a client-supplied role or email.
-- A database owner can bypass RLS; these API authorization gates are essential. Keep the DB connection string server-only.
-- A public inquiry can be submitted through `POST /api/inquiry`, separately from the admin CRUD endpoint. For production abuse prevention, configure Cloudflare Turnstile in BOTH client and backend before enabling `TURNSTILE_SECRET_KEY` on its own.
-
-## Step-by-step: create the first administrator
-
-1. Open the administrator-only URL on the deployment domain after the automatic Vercel build has succeeded. This URL is intentionally not advertised in public documentation.
-2. Click **Create first account / ساخت اولین حساب**.
-3. Enter your **own** email and a strong unique password. Never share the password.
-4. Confirm the verification **OTP from your email**. Shared Neon email delivery may be rate-limited. If sign-up cannot send email, configure a custom SMTP provider in **Neon → Auth → Configuration**.
-5. Sign in. You will see **Admin approval required**, with your exact **User UUID**.
-6. Neon Console → `personal-portfolio-db` → **Postgres database → SQL Editor**. Confirm **Branch=main**, **Database=neondb**.
-7. Run this query, substituting ONLY the UUID you saw in the admin UI:
-
-```sql
-INSERT INTO public.portfolio_admins (user_id)
-SELECT id FROM neon_auth."user"
-WHERE id = 'PASTE_YOUR_UUID_HERE'::uuid
-  AND "emailVerified" = true
-ON CONFLICT (user_id) DO NOTHING;
-```
-
-8. Run verification:
-
-```sql
-SELECT a.user_id, u.email, u."emailVerified"
-FROM public.portfolio_admins a
-JOIN neon_auth."user" u ON u.id=a.user_id;
-```
-
-Only **your** verified email should appear. Do not add strangers or grant privileges using their email in a public query.
-9. Neon Auth settings → **disable new public sign-ups** after the first approved admin account exists. Keep email/password sign-in enabled. Trusted domains should include `https://personal-portfolio-x-mrhossein.vercel.app`. Prefer disabling localhost in production.
-10. Log out and log in again. Now the CMS sections and project/inquiry tabs should load. From Site CMS, select **Initialize editable content** **once** to import the default content and starter projects. This operation is restricted to an approved admin and will make published items live.
-
-## Content management and deployment
-
-After initialization, public pages load CMS entries from the Neon-backed Vercel endpoint. Edit Persian and English titles and descriptions, reorder sections, publish/unpublish services, skills, social links and pages, and add projects without another Git build.
-
-**Media uploads**: the upload endpoint supports images/videos up to **4 MB**, but only after enabling **Vercel Blob** for this project (which automatically provides `BLOB_READ_WRITE_TOKEN` to Vercel). Until then, you can paste an HTTPS URL for images/videos into the CMS. Larger files also require using hosted URLs or a future client-upload flow.
-
-No manual Vercel deployments are required for edits in Git `main`; Vercel builds automatically. Normal CMS content changes do not trigger builds.
+Database storage still uses Neon PostgreSQL (DATABASE_URL); optional media uploads require Vercel Blob.
 
 ## Troubleshooting
 
-- `403 Admin role required`: signed-in account is not verified and approved via `portfolio_admins`.
-- `503 Neon database is not configured`: check Vercel **Production** environment variables and automatic build.
-- `401/403` after login: verify that `NEON_AUTH_BASE_URL` and `VITE_NEON_AUTH_URL` refer to the same Neon branch and that the domain is in Trusted Origins.
-- Upload returns `503 Media storage is not connected`: install Vercel Blob, or use image URL.
-- Pending registration verification: check Neon shared SMTP delivery/rate limits and resend verification.
-- Avoid sharing database URLs, passwords, JWTs or keys in screenshots or chats.
+- 503 or admin_config_missing: check ADMIN_EMAIL, ADMIN_PASSWORD, password length (16+), Production scope, and the active deployment.
+- 401: wrong email or password. Email comparison ignores letter case, password comparison does not.
+- 429: the login throttle has been reached. Try again after the response Retry-After interval.
+- 403: the signed cookie is missing, expired, or not attached. Open the CMS over HTTPS and sign in again.
+- Dashboard 503: check DATABASE_URL and Neon availability.
+- Upload 503: configure Vercel Blob or use a hosted HTTPS image URL.
+
+## Manual verification checklist
+
+1. When signed out, GET /api/admin-status reports admin=false and the dashboard API denies private access.
+2. Wrong credentials return HTTP 401 without an authenticated cookie.
+3. Correct credentials create an HttpOnly cookie and open the private CMS dashboard.
+4. Log out, refresh, and confirm the protected dashboard rejects the request.
+5. Rotate ADMIN_PASSWORD and confirm old signed sessions no longer authorize requests.

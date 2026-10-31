@@ -1,3 +1,7 @@
+# Archived CMS guide
+
+> This legacy document describes the retired Supabase/Neon Auth registration process. Do not use its sign-up, OTP or UUID instructions for the current site. Follow [the current environment-based CMS authentication guide](NEON_CMS.md).
+
 # Mr.HoSSein CMS Studio | پنل مدیریت اختصاصی
 
 ## امکانات

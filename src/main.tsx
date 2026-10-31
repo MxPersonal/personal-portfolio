@@ -6,7 +6,7 @@ import {serviceGroups,labels,type Localized} from './content';
 import {SocialIcon} from './SocialIcon';
 const AdminDashboard=React.lazy(()=>import('./AdminDashboard'));
 import {defaultCMS,getCMS,entryOf,entriesOf,safeUrl,type CmsEntry,type CmsSnapshot} from './cms';
-import {supabase,cmsConfigured,loadProjects,loadSetting,adminStatus,type Project,type ProjectStatus} from './db';
+import {loadProjects,loadSetting,adminLogin,adminStatus,type Project,type ProjectStatus} from './db';
 import './styles.css';
 import './cms.css';
 
@@ -211,104 +211,40 @@ function InquiryPanel({lang,entries}:{lang:Lang,entries:CmsEntry[]}){
  </form></details>
 }
 function Admin({lang,onRefresh}:Props & {onRefresh:()=>void}){
- const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[code,setCode]=useState('');
- const [authMode,setAuthMode]=useState<'signIn'|'signUp'|'verify'>('signIn');
- const [sessionReady,setSessionReady]=useState(false),[authorized,setAuthorized]=useState(false),[status,setStatus]=useState('');
- const [authReason,setAuthReason]=useState('checking');
- const [items,setItems]=useState<Project[]>([]);
- const [inquiries,setInquiries]=useState<Array<{id:string;reference:string;full_name:string;email:string;service:string;message:string;status:string;created_at:string}>>([]);
- const [tab,setTab]=useState('site'),[edit,setEdit]=useState<null|Project>(null),[busy,setBusy]=useState(false);
- const [availability,setAvailability]=useState<Localized>({fa:labels.fa.availability,en:labels.en.availability});
- const t=labels[lang];
- const refresh=async()=>{
-  if(!supabase)return;
-  const [p,q,settings]=await Promise.all([
-   supabase.from('portfolio_projects').select('*').order('sort_order'),
-   supabase.from('portfolio_inquiries').select('*').order('created_at',{ascending:false}).limit(100),
-   supabase.from('portfolio_settings').select('value').eq('key','availability').maybeSingle()
-  ]);
-  if(p.data)setItems(p.data as Project[]);
-  if(q.data)setInquiries(q.data);
-  if(settings.data?.value)setAvailability(settings.data.value as Localized);
-  if(p.error||q.error)setStatus(p.error?.message||q.error?.message||'');
- };
+ const [email,setEmail]=useState(''),[password,setPassword]=useState('');
+ const [checking,setChecking]=useState(true),[authorized,setAuthorized]=useState(false);
+ const [reason,setReason]=useState('checking'),[status,setStatus]=useState(''),[busy,setBusy]=useState(false);
  useEffect(()=>{
-  if(!supabase)return;
   let mounted=true;
-  supabase.auth.getSession().then(async ({data})=>{
-   if(!mounted)return;
-   setSessionReady(Boolean(data.session));
-   if(data.session){const result=await adminStatus();if(!mounted)return;setAuthorized(result.admin);setAuthReason(result.reason);if(result.admin)void refresh()}
-  }).catch(()=>setSessionReady(false));
+  adminStatus().then(result=>{
+   if(mounted){setAuthorized(result.admin);setReason(result.reason)}
+  }).finally(()=>{if(mounted)setChecking(false)});
   return ()=>{mounted=false};
  },[]);
  async function onAuth(e:React.FormEvent){
-  e.preventDefault();if(!supabase)return;setBusy(true);setStatus('');
+  e.preventDefault();setBusy(true);setStatus('');
   try{
-   if(authMode==='verify'){
-    const r=await supabase.auth.verifyEmail({email,otp:code});
-    if(r.error)throw r.error;
-    setAuthMode('signIn');setStatus(lang==='fa'?'ایمیل تأیید شد. اکنون وارد شو.':'Email verified. Please sign in.');return;
-   }
-   if(password.length<8)throw Error(lang==='fa'?'رمز عبور باید حداقل ۸ کاراکتر باشد.':'Password must have at least 8 characters.');
-   if(authMode==='signUp'){
-    const r=await supabase.auth.signUpWithPassword({email,password});
-    if(r.error)throw r.error;
-    if(r.requiresVerification){setAuthMode('verify');setStatus(lang==='fa'?'کد تأیید به ایمیل ارسال شد.':'Check your inbox for the verification code.');return}
-    setStatus(lang==='fa'?'حساب ایجاد شد؛ اکنون وارد شو.':'Account created. Please sign in.');
-    setAuthMode('signIn');return;
-   }
-   const r=await supabase.auth.signInWithPassword({email,password});
-   if(r.error)throw r.error;
-   setSessionReady(true);
-   const result=await adminStatus();setAuthorized(result.admin);setAuthReason(result.reason);
-   if(result.admin)await refresh();
-   else setStatus(lang==='fa'?'ورود انجام شد؛ بررسی دسترسی مدیر ناموفق بود.':'Signed in, but admin verification failed.');
+   await adminLogin(email,password);
+   const result=await adminStatus();
+   if(!result.admin)throw Error(lang==='fa'?'نشست مدیر برقرار نشد؛ دوباره تلاش کن.':'Admin session was not established. Try again.');
+   setAuthorized(true);setPassword('');onRefresh();
   }catch(err){setStatus(err instanceof Error?err.message:'Authentication failed')}
   finally{setBusy(false)}
  }
- const blank=():Project=>({id:'',slug:'',title:emptyLocalized(),summary:emptyLocalized(),body:emptyLocalized(),role:emptyLocalized(),status:'progress',category:'web',stack:[],cover_url:null,video_url:null,demo_url:null,repo_url:null,featured:false,published:false,sort_order:0});
- async function saveProject(){if(!supabase||!edit)return;setBusy(true);setStatus('');const {id,...fields}=edit;const result=id?await supabase.from('portfolio_projects').update(fields).eq('id',id):await supabase.from('portfolio_projects').insert(fields);if(result.error)setStatus(result.error.message);else{setEdit(null);setStatus(lang==='fa'?'پروژه ذخیره شد.':'Project saved.');await refresh();onRefresh()}setBusy(false)};
- async function deleteProject(id:string){if(!supabase||!confirm(lang==='fa'?'این پروژه حذف شود؟':'Delete this project?'))return;const r=await supabase.from('portfolio_projects').delete().eq('id',id);if(r.error)setStatus(r.error.message);else{refresh();onRefresh()}};
- async function uploadFile(file:File){if(!supabase||!edit)return;if(file.size>15*1024*1024){setStatus('File exceeds 15 MB');return}setBusy(true);const filename=`projects/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9_.-]/g,'-')}`;const {data,error}=await supabase.storage.from('portfolio-media').upload(filename,file,{upsert:false,contentType:file.type});if(error)setStatus(error.message);else if(data){const {data:url}=supabase.storage.from('portfolio-media').getPublicUrl(data.path);setEdit(v=>v?{...v,cover_url:url.publicUrl}:v)}setBusy(false)};
- if(!cmsConfigured)return <section className="admin-layout container"><span className="eyebrow">NEON CMS</span><h1>{lang==='fa'?'اتصال Neon Auth پیکربندی نشده':'Neon Auth is not configured'}</h1><p>VITE_NEON_AUTH_URL</p></section>;
- if(!sessionReady)return <section className="admin-layout container">
-  <span className="eyebrow">NEON AUTH / PORTFOLIO CMS</span><h1>{authMode==='verify'?(lang==='fa'?'تأیید ایمیل':'Verify your email'):authMode==='signUp'?(lang==='fa'?'ساخت حساب':'Create account'):(lang==='fa'?'ورود مدیر':'Admin sign in')}</h1>
+ if(checking)return <section className="admin-layout container"><LoaderCircle className="spinning" size={24}/> {lang==='fa'?'در حال بررسی نشست مدیر...':'Checking admin session...'}</section>;
+ if(!authorized)return <section className="admin-layout container" dir={lang==='fa'?'rtl':'ltr'}>
+  <span className="eyebrow">MR.HOSSEIN / PRIVATE CMS</span>
+  <h1>{lang==='fa'?'ورود مدیر':'Administrator sign in'}</h1>
+  <p>{lang==='fa'?'ورود اختصاصی با ایمیل و رمز تعریف‌شده در تنظیمات امن سرور.':'Sign in using the email and password configured securely on the server.'}</p>
+  {reason==='admin_config_missing'&&<p role="alert" className="status-text">{lang==='fa'?'متغیرهای ADMIN_EMAIL و ADMIN_PASSWORD در محیط Production تنظیم نشده‌اند یا رمز کمتر از ۱۶ کاراکتر است.':'Set ADMIN_EMAIL and ADMIN_PASSWORD in Production (password at least 16 characters).'}</p>}
   <form className="auth-form" onSubmit={onAuth}>
-   <label>Email<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email"/></label>
-   {authMode==='verify'?<label>{lang==='fa'?'کد تأیید ایمیل':'Email verification code'}<input required inputMode="numeric" type="text" value={code} onChange={e=>setCode(e.target.value)} autoComplete="one-time-code"/></label>:<label>{lang==='fa'?'رمز عبور':'Password'}<input required minLength={8} type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete={authMode==='signUp'?'new-password':'current-password'}/></label>}
-   <button className="btn btn-primary" disabled={busy} type="submit">{authMode==='verify'?(lang==='fa'?'تأیید کد':'Verify code'):authMode==='signUp'?(lang==='fa'?'ثبت‌نام':'Create account'):(lang==='fa'?'ورود':'Sign in')}</button>
+   <label>{lang==='fa'?'ایمیل مدیر':'Admin email'}<input required type="email" name="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="username" dir="ltr" maxLength={254}/></label>
+   <label>{lang==='fa'?'رمز عبور':'Password'}<input required type="password" name="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" dir="ltr"/></label>
+   <button className="btn btn-primary" disabled={busy||reason==='admin_config_missing'} type="submit">{busy?(lang==='fa'?'در حال ورود...':'Signing in...'):(lang==='fa'?'ورود به CMS':'Sign in to CMS')}</button>
   </form>
-  <p><button type="button" className="btn btn-outline" onClick={()=>{setStatus('');setAuthMode(authMode==='signUp'||authMode==='verify'?'signIn':'signUp')}}>{authMode==='signIn'?(lang==='fa'?'ساخت اولین حساب':'Create first account'):(lang==='fa'?'بازگشت به ورود':'Back to sign in')}</button></p>
-  {status&&<p className="status-text" role="status">{status}</p>}
- </section>;
- const authMessages:Record<string,Localized>={
- token_missing:{fa:'نشست ورود برقرار است، اما توکن دسترسی برای سرور ارسال نشده است. یک بار خارج شو و دوباره وارد شو.',en:'Signed in, but the access token was unavailable. Sign out and sign in again.'},
- token_invalid_or_expired:{fa:'توکن ورود توسط Neon تأیید نشد. اتصال Auth و تنظیمات Vercel باید بررسی شوند.',en:'The server could not validate your Neon access token.'},
- admin_role_missing:{fa:'حساب در سرور شناسایی شد، اما شناسه آن در جدول مدیران همین دیتابیس پیدا نشد.',en:'Identity verified but this user ID is not in the approved admins table.'},
- database_unavailable:{fa:'اتصال API به دیتابیس Neon خطا داد. نیازی به ثبت مجدد UUID نیست.',en:'The CMS server could not access its Neon database.'},
- auth_config_missing:{fa:'نشانی Neon Auth در تنظیمات سرور Vercel موجود نیست.',en:'Neon Auth server URL is missing from Vercel configuration.'},
- auth_unavailable:{fa:'Neon Auth در مرورگر هنوز پیکربندی نشده است.',en:'Neon Auth is not configured in the browser.'},
- connection_failed:{fa:'پاسخ بررسی دسترسی از API سایت دریافت نشد.',en:'The admin status API did not respond.'},
- checking:{fa:'دسترسی مدیر در حال بررسی است.',en:'Checking administrator access.'}
- };
- async function retryAdmin(){setBusy(true);const r=await adminStatus();setAuthorized(r.admin);setAuthReason(r.reason);setStatus('');if(r.admin)await refresh();setBusy(false)}
- if(!authorized)return <section className="admin-layout container"><LockKeyhole size={38}/><h1>{lang==='fa'?'حساب هنوز مجوز مدیریت ندارد':'Admin approval required'}</h1>
-  <p role="status">{authMessages[authReason]?.[lang]||(lang==='fa'?'دسترسی مدیر توسط سرور تأیید نشد.':'Administrator access could not be verified.')}</p><p dir="ltr">Auth check: <code>{authReason}</code></p><button className="btn btn-outline" disabled={busy} onClick={retryAdmin}>{lang==='fa'?'بررسی دوباره دسترسی':'Recheck administrator access'}</button>
-  <AdminIdentity lang={lang}/>
-  {status&&<p className="status-text">{status}</p>}
-  <button className="btn btn-outline" onClick={()=>supabase?.auth.signOut()}>Sign out</button>
+  {status&&<p className="status-text" role="alert">{status}</p>}
  </section>;
  return <React.Suspense fallback={<section className="admin-layout container"><LoaderCircle className="spinning" size={24}/> {lang==='fa'?'در حال بارگذاری پنل مدیریت...':'Loading CMS Studio...'}</section>}><AdminDashboard lang={lang} onRefresh={onRefresh}/></React.Suspense>;
-}
-
-function AdminIdentity({lang}:{lang:Lang}){
- const [identity,setIdentity]=useState<{id:string,email:string}|null>(null);
- useEffect(()=>{supabase?.auth.getUser().then(r=>{
-  const u=r.data.user;
-  if(u?.id)setIdentity({id:u.id,email:u.email||''});
- })},[]);
- return identity?<div className="admin-notice" dir="ltr"><strong>{identity.email}</strong><p>User UUID: <code>{identity.id}</code></p><button className="btn btn-outline" onClick={()=>navigator.clipboard.writeText(identity.id)}>{lang==='fa'?'کپی شناسه':'Copy user ID'} <Copy size={14}/></button></div>:null;
 }
 
 function App(){
