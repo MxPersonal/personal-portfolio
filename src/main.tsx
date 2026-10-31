@@ -193,7 +193,7 @@ function ContactSection({lang,entries}:{lang:Lang,entries:CmsEntry[]}){
  <InquiryPanel lang={lang} entries={entries}/>
  <div className="footer-socials footer-social-icons" aria-label={lang==='fa'?'شبکه‌های اجتماعی':'Social networks'}>{social.map(x=>{const link=safeUrl(x.link_url);const name=x.title[lang]||x.title.en||x.slug;return link?<a className="social-icon-link" href={link} target="_blank" rel="noopener noreferrer" key={x.slug} aria-label={name} title={name}><SocialIcon slug={x.slug} name={name} url={link}/></a>:null})}</div>
  <nav className="cms-custom-pages">{pages.map(x=><a key={x.slug} href={'/'+lang+'/page/'+x.slug}>{x.title[lang]}</a>)}</nav>
- <div className="footer-bottom"><span>© {new Date().getFullYear()} Mr.HoSSein. All rights reserved.</span><a href="#home">{dict[lang].top} ↑</a><a href="/admin">CMS</a></div>
+ <div className="footer-bottom"><span>© {new Date().getFullYear()} Mr.HoSSein. All rights reserved.</span><a href="#home">{dict[lang].top} ↑</a></div>
  </footer></section>
 }
 function InquiryPanel({lang,entries}:{lang:Lang,entries:CmsEntry[]}){
@@ -316,7 +316,7 @@ function App(){
  const [available,setAvailable]=useState<Localized>({fa:labels.fa.availability,en:labels.en.availability});
  const [publicProjects,setPublicProjects]=useState<Project[]>([]);
  const [cms,setCms]=useState<CmsSnapshot>({entries:defaultCMS,initialized:false,error:null});
- const isAdminRoute=location.pathname.startsWith('/admin');
+ const isAdminRoute=/^\/cms\/admin\/?$/.test(location.pathname);
  useEffect(()=>{document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr';localStorage.setItem('mrhossein-lang',lang);
   if(!isAdminRoute&&/^\/(fa|en)\/?$/.test(location.pathname))history.replaceState({},'','/'+lang+location.hash);
   document.title=lang==='fa'?'Mr.HoSSein | توسعه‌دهنده فول‌استک و هوش مصنوعی':'Mr.HoSSein | Full-Stack Developer · AI Engineer';
