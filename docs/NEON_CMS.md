@@ -5,7 +5,7 @@
 - GitHub: `MxPersonal/personal-portfolio-x-mrhossein`
 - Vercel: `hosseinyazdanpanahs-projects/personal-portfolio`
 - Neon: `personal-portfolio-db`, project ID `icy-mode-87886981`, database `neondb`, branch `main`.
-- CMS: `/admin`
+- CMS: administrator-only URL (not linked from the public site; refer to deployment routing configuration).
 - This integration replaces the previous Supabase frontend client and inquiry backend.
 
 ## Completed in the Neon Console
@@ -18,6 +18,8 @@ Five tables already exist under `public` and have RLS enabled:
 
 ## Server-to-database connection and security
 
+The CMS entry route is deliberately absent from public navigation and marked `noindex` at the hosting layer. This hides the entry point from ordinary browsing, but is **not** a security boundary: Neon authentication and server-side `portfolio_admins` authorization are mandatory.
+
 The Vercel ↔ Neon integration supplies **server-only** `DATABASE_URL`, `NEON_AUTH_BASE_URL` and the browser-safe `VITE_NEON_AUTH_URL`. Ensure these variables target **Production**. Passwords and connection URLs must NEVER be checked into GitHub or put in `VITE_...` variables.
 
 - The public Vercel endpoint `GET /api/cms` returns **only** published projects and CMS entries; it allows only a small set of public settings. It never returns inquiries/admin records.
@@ -28,7 +30,7 @@ The Vercel ↔ Neon integration supplies **server-only** `DATABASE_URL`, `NEON_A
 
 ## Step-by-step: create the first administrator
 
-1. Open `https://personal-portfolio-x-mrhossein.vercel.app/admin` after the automatic Vercel build has succeeded.
+1. Open the administrator-only URL on the deployment domain after the automatic Vercel build has succeeded. This URL is intentionally not advertised in public documentation.
 2. Click **Create first account / ساخت اولین حساب**.
 3. Enter your **own** email and a strong unique password. Never share the password.
 4. Confirm the verification **OTP from your email**. Shared Neon email delivery may be rate-limited. If sign-up cannot send email, configure a custom SMTP provider in **Neon → Auth → Configuration**.
